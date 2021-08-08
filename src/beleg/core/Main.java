@@ -1,16 +1,23 @@
 package beleg.core;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWGammaRamp;
+import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GL15;
 
 public class Main {
 
 	private long m_Window;
+	private DeferredRenderer m_Renderer;
 	
 	public static void main(String[] args) {
 		
@@ -33,9 +40,9 @@ public class Main {
 		
 		printMonitorInfo();
 		
-		GLFW.glfwWindowHint(GLFW.GLFW_VERSION_MAJOR, 3);
-		GLFW.glfwWindowHint(GLFW.GLFW_VERSION_MINOR, 3);
-		//GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
 		
 		m_Window = GLFW.glfwCreateWindow(960, 540, "Deferred Rendering Demo", 0, 0);
 		
@@ -78,50 +85,60 @@ public class Main {
 			
 			GLFW.glfwGetMonitorPos(pointer, xMM, yMM);
 			System.out.printf("Position: %d, %d\n", xMM[0], yMM[0]);
+			
+			GLFWGammaRamp gamma = GLFW.glfwGetGammaRamp(pointer);
+			
+			//System.out.printf("");
+			
+			GLFWVidMode.Buffer buffer = GLFW.glfwGetVideoModes(pointer);
+			
+			for(int v = 0; v < buffer.remaining(); v++) {
+				
+				GLFWVidMode vidmode = buffer.get(v);
+				
+				System.out.printf("Vidmode %d:\n", v);
+				System.out.printf("\tResolution: %d, %d\n", buffer.width(), buffer.height());
+				System.out.printf("\tRefresh Rate: %d\n", buffer.refreshRate());
+				System.out.printf("\tRGB: %d %d %d\n", buffer.redBits(), buffer.greenBits(), buffer.blueBits());
+			}
 		}
 	}
 	
 	public void loop() {
 		
-		ByteBuffer data = null;
+		m_Renderer = new DeferredRenderer();
 		
-		int image = GL11.glGenTextures();
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, image);
-		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, 960, 560, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, data);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
+		m_Renderer.setup(1280, 720);
 		
 		
-		int fbo = GL33.glGenFramebuffers();
-		GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, fbo);
-		GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, image, 0);
-		
-		
-		int comp = GL33.glCheckFramebufferStatus(fbo);
-		if(comp == GL33.GL_FRAMEBUFFER_COMPLETE) {
-			
-			System.out.println("Framebuffer complete");
-		}
-		else {
-			
-			System.out.println("Framebuffer incomplete");
-		}
-		
-		GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 			
+			
+			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
+			
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+			
+			GL11.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
+			
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 			
+	
+			
+			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+			
+			//GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+	
+			m_Renderer.render();
+			
+			
+				
 			GLFW.glfwSwapBuffers(m_Window);
 			
 			GLFW.glfwPollEvents();
 		}
 		
-		GL33.glDeleteFramebuffers(fbo);
+		m_Renderer.delete();
 	}
 	
 	public void terminate() {

@@ -1,6 +1,7 @@
 package beleg.core;
 
 
+import org.joml.Vector2i;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWGammaRamp;
@@ -16,6 +17,8 @@ public class Main {
 	
 	private GeometryRenderer m_GeometryRenderer;
 	private Scene m_Scene;
+	
+	private Vector2i m_WindowSize = new Vector2i(960, 540);
 	
 	public static void main(String[] args) {
 		
@@ -42,7 +45,7 @@ public class Main {
 		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
 		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
 		
-		m_Window = GLFW.glfwCreateWindow(960, 540, "Deferred Rendering Demo", 0, 0);
+		m_Window = GLFW.glfwCreateWindow(m_WindowSize.x, m_WindowSize.y, "Deferred Rendering Demo", 0, 0);
 		
 		if(m_Window == 0) {
 			
@@ -119,20 +122,24 @@ public class Main {
 			
 			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
 			
-			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+			m_Renderer.setViewport();
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 			
 			GL11.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
-			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+			
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_TEST);
 			
 			m_GeometryRenderer.use();
 			m_Scene.render();
 			
-	
 			
 			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-			
-			//GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 	
+			GL11.glViewport(0, 0, m_WindowSize.x, m_WindowSize.y);
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+			
 			m_Renderer.render();
 			
 			

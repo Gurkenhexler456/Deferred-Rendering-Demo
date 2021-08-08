@@ -5,6 +5,7 @@ import org.lwjgl.opengl.GL20;
 
 import java.nio.ByteBuffer;
 
+import org.joml.Vector2i;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
@@ -45,6 +46,8 @@ public class DeferredRenderer {
 	
 	private Shader m_DeferredShader;
 	
+	private Vector2i m_Resolution;
+	
 	
 	public DeferredRenderer() {
 		
@@ -59,6 +62,8 @@ public class DeferredRenderer {
 		m_Normal = new Texture();
 		
 		m_DeferredShader = new Shader();
+		
+		m_Resolution = new Vector2i();
 	}
 	
 	/**
@@ -78,18 +83,20 @@ public class DeferredRenderer {
 		
 		ByteBuffer data = null;
 		
+		m_Resolution.set(_width, _height);
+		
 		m_Position.bind();
-		m_Position.image2D(_width, _height, data);
+		m_Position.image2D(m_Resolution.x, m_Resolution.y, data);
 		m_Position.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
 		m_Position.unbind();
 		
 		m_Albedo.bind();
-		m_Albedo.image2D(_width, _height, data);
+		m_Albedo.image2D(m_Resolution.x, m_Resolution.y, data);
 		m_Albedo.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
 		m_Albedo.unbind();
 		
 		m_Normal.bind();
-		m_Normal.image2D(_width, _height, data);
+		m_Normal.image2D(m_Resolution.x, m_Resolution.y, data);
 		m_Normal.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
 		m_Normal.unbind();
 	}
@@ -162,6 +169,11 @@ public class DeferredRenderer {
 	public int getRenderFBO() {
 		
 		return m_FBO;
+	}
+	
+	public void setViewport() {
+		
+		GL11.glViewport(0, 0, m_Resolution.x, m_Resolution.y);
 	}
 	
 	public int[] getDrawBuffers() {

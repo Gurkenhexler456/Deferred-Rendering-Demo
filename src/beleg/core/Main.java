@@ -1,7 +1,5 @@
 package beleg.core;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
 
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -9,15 +7,15 @@ import org.lwjgl.glfw.GLFWGammaRamp;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GL15;
 
 public class Main {
 
 	private long m_Window;
 	private DeferredRenderer m_Renderer;
+	
+	private GeometryRenderer m_GeometryRenderer;
+	private Scene m_Scene;
 	
 	public static void main(String[] args) {
 		
@@ -107,9 +105,13 @@ public class Main {
 	public void loop() {
 		
 		m_Renderer = new DeferredRenderer();
-		
 		m_Renderer.setup(1280, 720);
 		
+		m_GeometryRenderer = new GeometryRenderer();
+		m_GeometryRenderer.setup();
+		
+		m_Scene = new Scene();
+		m_Scene.load();
 		
 		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
@@ -120,8 +122,10 @@ public class Main {
 			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 			
 			GL11.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
-			
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
+			
+			m_GeometryRenderer.use();
+			m_Scene.render();
 			
 	
 			

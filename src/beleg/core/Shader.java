@@ -2,6 +2,7 @@ package beleg.core;
 
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 
 public class Shader {
 
@@ -59,6 +60,11 @@ public class Shader {
 		GL20.glBindAttribLocation(m_ProgramID, _index, _name);
 	}
 	
+	public void bindFragDataLocation(int _index, String _name) {
+		
+		GL30.glBindFragDataLocation(m_ProgramID, _index, _name);
+	}
+	
 	public void removeShader(int shader) {
 		
 		GL20.glDetachShader(m_ProgramID, shader);
@@ -81,6 +87,16 @@ public class Shader {
 		GL20.glUseProgram(0);
 	}
 	
+	
+	public int getAttributeLocation(String _name) {
+		
+		return GL20.glGetAttribLocation(m_ProgramID, _name);
+	}
+	
+	public int getUniformLocation(String _name) {
+		
+		return GL20.glGetUniformLocation(m_ProgramID, _name);
+	}
 	
 	
 	public int getProgram() {

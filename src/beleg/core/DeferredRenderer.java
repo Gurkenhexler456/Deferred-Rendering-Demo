@@ -37,6 +37,11 @@ public class DeferredRenderer {
 	private Texture m_Normal;
 	
 	private int m_FBO;
+	private int[] m_DrawBuffer = {
+		GL33.GL_COLOR_ATTACHMENT0,
+		GL33.GL_COLOR_ATTACHMENT1,
+		GL33.GL_COLOR_ATTACHMENT2,
+	};
 	
 	private Shader m_DeferredShader;
 	
@@ -73,15 +78,15 @@ public class DeferredRenderer {
 		
 		ByteBuffer data = null;
 		
-		m_Albedo.bind();
-		m_Albedo.image2D(_width, _height, data);
-		m_Albedo.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
-		m_Albedo.unbind();
-		
 		m_Position.bind();
 		m_Position.image2D(_width, _height, data);
 		m_Position.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
 		m_Position.unbind();
+		
+		m_Albedo.bind();
+		m_Albedo.image2D(_width, _height, data);
+		m_Albedo.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
+		m_Albedo.unbind();
 		
 		m_Normal.bind();
 		m_Normal.image2D(_width, _height, data);
@@ -92,8 +97,13 @@ public class DeferredRenderer {
 	private void setupFramebuffer() {
 	
 		GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_FBO);
-		GL33.glFramebufferTexture2D(GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, +
-									GL11.GL_TEXTURE_2D, m_Albedo.getID(), 0);
+		GL33.glDrawBuffers(m_DrawBuffer);
+		GL33.glFramebufferTexture2D(	GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT0, 
+										GL11.GL_TEXTURE_2D, m_Position.getID(), 0);
+		GL33.glFramebufferTexture2D(	GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT1, 
+										GL11.GL_TEXTURE_2D, m_Albedo.getID(), 0);
+		GL33.glFramebufferTexture2D(	GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT2, 
+										GL11.GL_TEXTURE_2D, m_Normal.getID(), 0);
 		
 		
 		int comp = GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER);
@@ -111,8 +121,8 @@ public class DeferredRenderer {
 	
 	private void setupShader() {
 		
-		String vert_source = Resources.loadFileToString("res/shaders/Quad_Vertex.glsl");
-		String frag_source = Resources.loadFileToString("res/shaders/Quad_Fragment.glsl");
+		String vert_source = Resources.loadFileToString("res/shaders/deferred.vert");
+		String frag_source = Resources.loadFileToString("res/shaders/deferred.frag");
 		
 		int vert_id = m_DeferredShader.addShader(GL20.GL_VERTEX_SHADER, vert_source);
 		int frag_id = m_DeferredShader.addShader(GL20.GL_FRAGMENT_SHADER, frag_source);
@@ -124,6 +134,11 @@ public class DeferredRenderer {
 		
 		m_DeferredShader.removeShader(vert_id);
 		m_DeferredShader.removeShader(frag_id);
+		
+		// setup texture units
+		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Albedo"), 0);
+		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Position"), 1);
+		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Normal"), 2);
 	}
 	
 	public void setupBuffers() {
@@ -149,6 +164,11 @@ public class DeferredRenderer {
 		return m_FBO;
 	}
 	
+	public int[] getDrawBuffers() {
+		
+		return m_DrawBuffer;
+	}
+	
 	public void render() {
 		
 		
@@ -163,7 +183,12 @@ public class DeferredRenderer {
 		GL20.glEnableVertexAttribArray(m_PositionLocation);
 		GL20.glEnableVertexAttribArray(m_UVLocation);
 		
+		GL20.glActiveTexture(GL20.GL_TEXTURE0);
 		m_Albedo.bind();
+		GL20.glActiveTexture(GL20.GL_TEXTURE1);
+		m_Position.bind();
+		GL20.glActiveTexture(GL20.GL_TEXTURE2);
+		m_Normal.bind();
 		
 		GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_INT, 0);
 		
@@ -174,10 +199,16 @@ public class DeferredRenderer {
 	
 	
 	public void delete() {
+	
 		
+		m_DeferredShader.delete();
+		m_Albedo.delete();
+		m_Position.delete();
+		m_Normal.delete();
+		GL33.glDeleteFramebuffers(m_FBO);
+		GL30.glDeleteVertexArrays(m_VAO);
+		GL15.glDeleteBuffers(m_VBO);
+		GL15.glDeleteBuffers(m_EBO);
 	}
-	
-	
-	
 
 }

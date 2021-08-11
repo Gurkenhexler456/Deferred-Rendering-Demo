@@ -12,7 +12,10 @@ void main() {
 
 	vf_Position 	= in_Position;
 	vf_UV 			= in_UV;
-	vf_Normal 		= in_Normal;
+	vf_Normal 		= (in_Normal + 1.0) * 0.5;
 	
-	gl_Position = vec4(in_Position, 1.0);
+	vec3 position 	= in_Position;
+	position		-= vec3(0.2, 0.3, 0.1) * position.z;
+
+	gl_Position = vec4(position, 1.0);
 }

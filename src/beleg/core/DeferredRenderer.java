@@ -33,9 +33,10 @@ public class DeferredRenderer {
 	private int m_PositionLocation	= 0;
 	private int m_UVLocation		= 1;
 	
-	private Texture m_Albedo;
-	private Texture m_Position;
-	private Texture m_Normal;
+	private Texture 		m_Albedo;
+	private Texture 		m_Position;
+	private Texture 		m_Normal;
+	private DepthTexture 	m_Depth;
 	
 	private int m_FBO;
 	private int[] m_DrawBuffer = {
@@ -57,9 +58,10 @@ public class DeferredRenderer {
 		
 		m_FBO = GL33.glGenFramebuffers();
 		
-		m_Albedo = new Texture();
-		m_Position = new Texture();
-		m_Normal = new Texture();
+		m_Albedo 	= new Texture();
+		m_Position 	= new Texture();
+		m_Normal 	= new Texture();
+		m_Depth 	= new DepthTexture();
 		
 		m_DeferredShader = new Shader();
 		
@@ -99,6 +101,11 @@ public class DeferredRenderer {
 		m_Normal.image2D(m_Resolution.x, m_Resolution.y, data);
 		m_Normal.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
 		m_Normal.unbind();
+		
+		m_Depth.bind();
+		m_Depth.image2D(m_Resolution.x, m_Resolution.y, data);
+		m_Depth.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
+		m_Depth.unbind();
 	}
 	
 	private void setupFramebuffer() {
@@ -111,8 +118,10 @@ public class DeferredRenderer {
 										GL11.GL_TEXTURE_2D, m_Albedo.getID(), 0);
 		GL33.glFramebufferTexture2D(	GL33.GL_FRAMEBUFFER, GL33.GL_COLOR_ATTACHMENT2, 
 										GL11.GL_TEXTURE_2D, m_Normal.getID(), 0);
+		GL33.glFramebufferTexture2D(	GL33.GL_FRAMEBUFFER, GL33.GL_DEPTH_ATTACHMENT, 
+										GL11.GL_TEXTURE_2D, m_Depth.getID(), 0);
 		
-		
+	
 		int comp = GL33.glCheckFramebufferStatus(GL33.GL_FRAMEBUFFER);
 		if(comp == GL33.GL_FRAMEBUFFER_COMPLETE) {
 			
@@ -143,9 +152,12 @@ public class DeferredRenderer {
 		m_DeferredShader.removeShader(frag_id);
 		
 		// setup texture units
+		m_DeferredShader.bind();
 		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Albedo"), 0);
 		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Position"), 1);
 		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Normal"), 2);
+		GL20.glUniform1i(m_DeferredShader.getUniformLocation("u_Depth"), 3);
+		m_DeferredShader.unbind();
 	}
 	
 	public void setupBuffers() {
@@ -185,7 +197,6 @@ public class DeferredRenderer {
 		
 		
 		GL11.glClearColor(0.0f, 0.5f, 0.75f, 1.0f);
-		
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 		
 		m_DeferredShader.bind();
@@ -201,6 +212,8 @@ public class DeferredRenderer {
 		m_Position.bind();
 		GL20.glActiveTexture(GL20.GL_TEXTURE2);
 		m_Normal.bind();
+		GL20.glActiveTexture(GL20.GL_TEXTURE3);
+		m_Depth.bind();
 		
 		GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_INT, 0);
 		

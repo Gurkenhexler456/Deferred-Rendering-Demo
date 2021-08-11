@@ -9,6 +9,9 @@ import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL33;
+import org.lwjgl.opengl.GLDebugMessageCallback;
+import org.lwjgl.opengl.GLUtil;
+import org.lwjgl.system.Callback;
 
 public class Main {
 
@@ -55,6 +58,8 @@ public class Main {
 		GLFW.glfwMakeContextCurrent(m_Window);
 		
 		GL.createCapabilities();
+		
+		Callback debugProc = GLUtil.setupDebugMessageCallback();
 		
 		String version = GL11.glGetString(GL11.GL_VERSION);
 		System.out.printf("Version: %s\n", version);
@@ -120,20 +125,27 @@ public class Main {
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 			
 			
+			/*
+			 * geometry render pass
+			 */
 			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
 			
 			m_Renderer.setViewport();
+			GL11.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
-			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
 			
-			GL11.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
+			//GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);	
+			//GL11.glLineWidth(5.0f);
 			
-			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_TEST);
+			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 			
 			m_GeometryRenderer.use();
 			m_Scene.render();
 			
 			
+			/*
+			 * deferred render pass
+			 */
 			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
 	
 			GL11.glViewport(0, 0, m_WindowSize.x, m_WindowSize.y);
@@ -141,7 +153,6 @@ public class Main {
 			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 			
 			m_Renderer.render();
-			
 			
 				
 			GLFW.glfwSwapBuffers(m_Window);

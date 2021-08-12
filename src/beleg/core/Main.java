@@ -139,9 +139,9 @@ public class Main {
 		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
 		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 10.0f);
 		
-		m_View.translate(0, 0, -2);
+		m_View.translate(0, 0, -1.5f);
 		
-		Vector3f rotation = new Vector3f(1, 2, 1).normalize();
+		Vector3f rotation = new Vector3f(0, 1, 1).normalize();
 		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 			

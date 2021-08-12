@@ -1,6 +1,6 @@
 #version 330 core
 
-#define LIGHT_COUNT 1
+#define LIGHT_COUNT 3
 
 #define LIGHT_DIRECTIONAL 0
 #define LIGHT_POINT 1

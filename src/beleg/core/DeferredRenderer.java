@@ -54,7 +54,7 @@ public class DeferredRenderer {
 	
 	private Vector2i m_Resolution;
 	
-	private Light[] m_Lights = new Light[1];
+	private Light[] m_Lights = new Light[3];
 	private Vector3f m_Ambient = new Vector3f(1).mul(0.2f);
 	
 	
@@ -189,8 +189,21 @@ public class DeferredRenderer {
 	
 	public void setupLights() {
 		
-		m_Lights[0] = new DirectionalLight(new Vector3f(0, 1, 0), new Vector3f(1, 0, 0));
+		float x, y, step;
+		float r, g, b;
 		
+		step = (float)(2 * Math.PI) / m_Lights.length;
+		for(int i = 0; i < m_Lights.length; i++) {
+			
+			x = (float) Math.sin(step * i);
+			y = (float) Math.cos(step * i);
+			
+			r = (i % 3) == 0 ? 1.0f : 0.0f;
+			g = (i % 3) == 1 ? 1.0f : 0.0f;
+			b = (i % 3) == 2 ? 1.0f : 0.0f;
+			
+			m_Lights[i] = new DirectionalLight(new Vector3f(x, y, 0), new Vector3f(r, g, b));
+		}
 		
 		m_DeferredShader.bind();
 		

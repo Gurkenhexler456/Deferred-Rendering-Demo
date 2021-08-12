@@ -8,14 +8,17 @@ out vec3 vf_Position;
 out vec2 vf_UV;
 out vec3 vf_Normal;
 
+uniform mat4 u_Projection;
+uniform mat4 u_View;
+uniform mat4 u_Model;
+
 void main() {
 
-	vf_Position 	= in_Position;
+	vec4 position 	= u_Model * vec4(in_Position, 1.0);
+
+	vf_Position 	= position.xyz;
 	vf_UV 			= in_UV;
 	vf_Normal 		= (in_Normal + 1.0) * 0.5;
-	
-	vec3 position 	= in_Position;
-	position		-= vec3(0.2, 0.3, 0.1) * position.z;
 
-	gl_Position = vec4(position, 1.0);
+	gl_Position = u_Projection * u_View * position;
 }

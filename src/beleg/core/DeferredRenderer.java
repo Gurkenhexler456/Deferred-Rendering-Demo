@@ -183,6 +183,11 @@ public class DeferredRenderer {
 		return m_FBO;
 	}
 	
+	public Vector2i getProjection() {
+		
+		return m_Resolution;
+	}
+	
 	public void setViewport() {
 		
 		GL11.glViewport(0, 0, m_Resolution.x, m_Resolution.y);

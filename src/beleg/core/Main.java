@@ -1,7 +1,9 @@
 package beleg.core;
 
 
+import org.joml.Matrix4f;
 import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWGammaRamp;
@@ -22,6 +24,10 @@ public class Main {
 	private Scene m_Scene;
 	
 	private Vector2i m_WindowSize = new Vector2i(960, 540);
+	
+	private Matrix4f m_Projection;
+	private Matrix4f m_View;
+	private Matrix4f m_Model;
 	
 	public static void main(String[] args) {
 		
@@ -118,11 +124,31 @@ public class Main {
 		m_GeometryRenderer = new GeometryRenderer();
 		m_GeometryRenderer.setup();
 		
+		m_Projection = new Matrix4f().identity();
+		m_View = new Matrix4f().identity();
+		m_Model = new Matrix4f().identity();
+		
+		m_GeometryRenderer.setProjection(m_Projection);
+		m_GeometryRenderer.setView(m_View);
+		m_GeometryRenderer.setModel(m_Model);
+		
 		m_Scene = new Scene();
 		m_Scene.load();
 		
 		
+		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
+		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 10.0f);
+		
+		m_View.translate(0, 0, -2);
+		
+		Vector3f rotation = new Vector3f(1, 2, 1).normalize();
+		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
+			
+			m_Model.identity();
+			m_Model.rotate((float)Math.toRadians(GLFW.glfwGetTime() * 50), rotation);
+			m_Model.translate(-0.5f, -0.5f, -0.5f);
+			
 			
 			
 			/*

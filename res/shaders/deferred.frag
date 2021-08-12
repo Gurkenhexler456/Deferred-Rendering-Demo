@@ -20,9 +20,9 @@ void main() {
 	
 	float depth 		= texture(u_Depth, vf_UV).x;
 
-	normal = (normal * 2) - 1;
+	//normal = (normal * 2) - 1;
 
 
 
-	out_Color = vec4(vec3(albedo), 1.0);
+	out_Color = vec4(vec3(position), 1.0);
 }

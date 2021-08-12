@@ -1,5 +1,8 @@
 package beleg.core;
 
+import java.nio.ByteBuffer;
+
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
@@ -10,6 +13,7 @@ public class Scene {
 	public int m_VAO;
 	public int m_VBO;
 	public int m_EBO;
+	public Texture m_Texture;
 	
 	public void load() {
 	
@@ -30,6 +34,12 @@ public class Scene {
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		
 		GL30.glBindVertexArray(0);
+		
+		m_Texture = new Texture();
+		m_Texture.bind();
+		m_Texture.setFilteringAndWrapping(GL11.GL_NEAREST, GL11.GL_REPEAT);
+		m_Texture.image2D(8, 8, genTexture(8, 8, 3));
+		m_Texture.unbind();
 	}
 	
 	public void render() {
@@ -41,7 +51,37 @@ public class Scene {
 		GL20.glEnableVertexAttribArray(GeometryRenderer.m_UVLocation);
 		GL20.glEnableVertexAttribArray(GeometryRenderer.m_NormalLocation);
 
+		GL20.glActiveTexture(GL20.GL_TEXTURE0);
+		m_Texture.bind();
+		
 		GL11.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
+	}
+	
+	
+	public ByteBuffer genTexture(int _w, int _h, int _c) {
+		
+		byte[] data = new byte[_w * _h * _c];
+		ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
+		
+		int index;
+		
+		for(int y = 0; y < _h; y++) {
+			
+			for(int x = 0; x < _w; x++) {
+				
+				index = _c * (y * _w + x);
+				
+				for(int i = 0; i < _c; i++) {
+					
+					data[index + i] = (byte) (((x + y) % 2) * 0xff);
+				}
+			}
+		}
+		
+		buffer.put(data);
+		buffer.flip();
+		
+		return buffer;
 	}
 	
 }

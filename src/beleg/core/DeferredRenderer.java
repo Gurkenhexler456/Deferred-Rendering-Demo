@@ -1,11 +1,16 @@
 package beleg.core;
 
 import org.lwjgl.opengl.GL33;
+
+import beleg.core.light.DirectionalLight;
+import beleg.core.light.Light;
+
 import org.lwjgl.opengl.GL20;
 
 import java.nio.ByteBuffer;
 
 import org.joml.Vector2i;
+import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
@@ -49,6 +54,10 @@ public class DeferredRenderer {
 	
 	private Vector2i m_Resolution;
 	
+	private Light[] m_Lights = new Light[1];
+	private Vector3f m_Ambient = new Vector3f(1).mul(0.2f);
+	
+	
 	
 	public DeferredRenderer() {
 		
@@ -79,6 +88,7 @@ public class DeferredRenderer {
 		setupFramebuffer();
 		setupShader();
 		setupBuffers();
+		setupLights();
 	}
 	
 	private void setupTextures(int _width, int _height) {
@@ -177,6 +187,34 @@ public class DeferredRenderer {
 		GL30.glBindVertexArray(0);
 	}
 	
+	public void setupLights() {
+		
+		m_Lights[0] = new DirectionalLight(new Vector3f(0, 1, 0), new Vector3f(1, 0, 0));
+		
+		
+		m_DeferredShader.bind();
+		
+		int ambiLoc 	= m_DeferredShader.getUniformLocation("u_Ambient");
+		GL20.glUniform3f(ambiLoc, m_Ambient.x, m_Ambient.y, m_Ambient.z);
+		
+		for(int i = 0; i < m_Lights.length; i++) {
+			
+			int posLoc 	= m_DeferredShader.getUniformLocation("u_Lights[" + i + "].position");
+			int colLoc 	= m_DeferredShader.getUniformLocation("u_Lights[" + i + "].color");
+			int typeLoc = m_DeferredShader.getUniformLocation("u_Lights[" + i + "].type");
+			
+			Vector3f position 	= m_Lights[i].getPosition();
+			Vector3f color 		= m_Lights[i].getColor();
+			int type 			= m_Lights[i].getType();
+			
+			GL20.glUniform3f(posLoc, position.x, position.y, position.z);
+			GL20.glUniform3f(colLoc, color.x, color.y, color.z);
+			GL20.glUniform1i(typeLoc, type);
+		}
+		
+		m_DeferredShader.unbind();
+	}
+	
 	
 	public int getRenderFBO() {
 		
@@ -219,6 +257,7 @@ public class DeferredRenderer {
 		m_Normal.bind();
 		GL20.glActiveTexture(GL20.GL_TEXTURE3);
 		m_Depth.bind();
+		
 		
 		GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_INT, 0);
 		

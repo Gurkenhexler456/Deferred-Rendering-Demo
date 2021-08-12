@@ -21,6 +21,7 @@ public class GeometryRenderer {
 	public Matrix4f m_View;
 	public Matrix4f m_Model;
 	
+	
 	public GeometryRenderer() {
 		
 		m_DefaultShader = new Shader();

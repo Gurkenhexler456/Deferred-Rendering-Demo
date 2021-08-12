@@ -18,7 +18,7 @@ void main() {
 
 	vf_Position 	= position.xyz;
 	vf_UV 			= in_UV;
-	vf_Normal 		= (in_Normal + 1.0) * 0.5;
+	vf_Normal 		= ((mat3(transpose(inverse(u_Model))) * in_Normal) + 1.0) * 0.5;
 
 	gl_Position = u_Projection * u_View * position;
 }

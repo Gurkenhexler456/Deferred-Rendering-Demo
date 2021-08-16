@@ -6,6 +6,10 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
+
+import beleg.core.graphics.Model;
+import beleg.core.graphics.ModelFactory;
+
 import org.lwjgl.opengl.GL20;
 
 public class Scene {
@@ -14,6 +18,8 @@ public class Scene {
 	public int m_VBO;
 	public int m_EBO;
 	public Texture m_Texture;
+	
+	public Model m_Model;
 	
 	public void load() {
 	
@@ -40,6 +46,9 @@ public class Scene {
 		m_Texture.setFilteringAndWrapping(GL11.GL_NEAREST, GL11.GL_REPEAT);
 		m_Texture.image2D(8, 8, genTexture(8, 8, 3));
 		m_Texture.unbind();
+		
+		Grid grid = new Grid(30, 30);
+		m_Model = ModelFactory.storeMesh(MeshGenerator.generateGridMesh(grid));
 	}
 	
 	public void render() {
@@ -55,6 +64,17 @@ public class Scene {
 		m_Texture.bind();
 		
 		GL11.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
+		
+		
+		
+		GL30.glBindVertexArray(m_Model.getVAO());
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, m_Model.getEBO());
+		
+		GL20.glEnableVertexAttribArray(GeometryRenderer.m_PositionLocation);
+		GL20.glEnableVertexAttribArray(GeometryRenderer.m_UVLocation);
+		GL20.glEnableVertexAttribArray(GeometryRenderer.m_NormalLocation);
+		
+		GL11.glDrawElements(GL11.GL_TRIANGLES, m_Model.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
 	}
 	
 	

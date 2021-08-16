@@ -54,7 +54,7 @@ public class DeferredRenderer {
 	
 	private Vector2i m_Resolution;
 	
-	private Light[] m_Lights = new Light[3];
+	private Light[] m_Lights = new Light[1];
 	private Vector3f m_Ambient = new Vector3f(1).mul(0.2f);
 	
 	

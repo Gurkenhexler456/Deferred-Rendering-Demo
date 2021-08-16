@@ -137,11 +137,17 @@ public class Main {
 		
 		
 		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
-		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 10.0f);
+		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 50.0f);
 		
-		m_View.translate(0, 0, -1.5f);
+		m_View.rotate((float)Math.toRadians(30), 1, 0, 0);
+		m_View.translate(0, -2, -3f);
 		
-		Vector3f rotation = new Vector3f(0, 1, 1).normalize();
+		Vector3f rotation = new Vector3f(0, 1, 0).normalize();
+		
+		
+		Grid grid = new Grid(1, 1);
+		Mesh mesh = MeshGenerator.generateGridMesh(grid); 
+		
 		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 			

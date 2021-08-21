@@ -15,6 +15,9 @@ import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
 
+import beleg.core.graphics.Model;
+import beleg.core.graphics.ModelFactory;
+
 public class Main {
 
 	private long m_Window;
@@ -28,6 +31,7 @@ public class Main {
 	private Matrix4f m_Projection;
 	private Matrix4f m_View;
 	private Matrix4f m_Model;
+	private Matrix4f m_ModelTerrain;
 	
 	public static void main(String[] args) {
 		
@@ -122,15 +126,13 @@ public class Main {
 		m_Renderer.setup(1280, 720);
 		
 		m_GeometryRenderer = new GeometryRenderer();
-		m_GeometryRenderer.setup();
 		
 		m_Projection = new Matrix4f().identity();
 		m_View = new Matrix4f().identity();
-		m_Model = new Matrix4f().identity();
 		
-		m_GeometryRenderer.setProjection(m_Projection);
-		m_GeometryRenderer.setView(m_View);
-		m_GeometryRenderer.setModel(m_Model);
+		m_Model = new Matrix4f().identity();
+		m_ModelTerrain = new Matrix4f().identity();
+		
 		
 		m_Scene = new Scene();
 		m_Scene.load();
@@ -149,11 +151,32 @@ public class Main {
 		Mesh mesh = MeshGenerator.generateGridMesh(grid); 
 		
 		
+		int projLoc = m_Scene.getCurrentShader().getUniformLocation("u_Projection");
+		int viewLoc = m_Scene.getCurrentShader().getUniformLocation("u_View");
+		int modelLoc = m_Scene.getCurrentShader().getUniformLocation("u_Model");
+		
+		m_Scene.getCurrentShader().setMat4(projLoc, m_Projection);
+		m_Scene.getCurrentShader().setMat4(viewLoc, m_View);
+		
+		Model cubeModel = ModelFactory.storeMesh(new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex));
+		Model terrainModel = ModelFactory.storeMesh(MeshGenerator.generateGridMesh(new Grid(30, 30)));
+		Actor cube = new Actor(m_Model, cubeModel);
+		Actor terrain = new Actor(m_ModelTerrain, terrainModel);
+		
+		m_Scene.addActor(cube);
+		m_Scene.addActor(terrain);
+		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 			
 			m_Model.identity();
-			m_Model.rotate((float)Math.toRadians(GLFW.glfwGetTime() * 50), rotation);
-			m_Model.translate(-0.5f, -0.5f, -0.5f);
+			m_Model.rotate((float)Math.toRadians(GLFW.glfwGetTime() * -50), rotation);
+			m_Model.translate(	-0.5f, 
+								(float)Math.sin(GLFW.glfwGetTime()) * 0.5f, 
+								-0.5f);
+			
+			m_ModelTerrain.identity();
+			m_ModelTerrain.rotate((float)Math.toRadians(GLFW.glfwGetTime() * 50), rotation);
+			m_ModelTerrain.translate(-15f, -0.5f, -15f);
 			
 			
 			
@@ -163,7 +186,7 @@ public class Main {
 			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
 			
 			m_Renderer.setViewport();
-			GL11.glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+			GL11.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			
 			//GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);	
@@ -171,8 +194,14 @@ public class Main {
 			
 			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 			
-			m_GeometryRenderer.use();
-			m_Scene.render();
+			//m_Scene.render();
+			
+			m_GeometryRenderer.useShader(m_Scene.getCurrentShader());
+			for(Actor m : m_Scene.getModels()) {
+			
+				m_Scene.getCurrentShader().setMat4(modelLoc, m.m_Transform);
+				m_GeometryRenderer.render(m.m_Model);
+			}
 			
 			
 			/*
@@ -195,12 +224,13 @@ public class Main {
 		m_Renderer.delete();
 	}
 	
+	
 	public void terminate() {
 		
 		GLFW.glfwDestroyWindow(m_Window);
 		
 		GLFW.glfwTerminate();
 	}
-
+	
 }
 

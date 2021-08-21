@@ -1,6 +1,7 @@
 package beleg.core;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
@@ -12,6 +13,11 @@ import beleg.core.graphics.ModelFactory;
 
 import org.lwjgl.opengl.GL20;
 
+/**
+ * This class implements a Scene used by the application.
+ * It stores all components
+ * @author Tobias Hofmann
+ */
 public class Scene {
 
 	public int m_VAO;
@@ -19,27 +25,16 @@ public class Scene {
 	public int m_EBO;
 	public Texture m_Texture;
 	
-	public Model m_Model;
+	public Model m_Terrain;
+	
+	public Shader m_CurrentShader;
+	
+	public ArrayList<Actor> m_Actor = new ArrayList<Actor>();
+	public ArrayList<Shader> m_Shaders;
 	
 	public void load() {
-	
-		m_VAO = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(m_VAO);
 		
-		m_VBO = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, m_VBO);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, MeshGenerator.m_CubeData, GL15.GL_STATIC_DRAW);
-		GL20.glVertexAttribPointer(GeometryRenderer.m_PositionLocation, 3, GL11.GL_FLOAT, false, 32, 0);
-		GL20.glVertexAttribPointer(GeometryRenderer.m_UVLocation, 2, GL11.GL_FLOAT, false, 32, 12);
-		GL20.glVertexAttribPointer(GeometryRenderer.m_NormalLocation, 3, GL11.GL_FLOAT, false, 32, 20);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		
-		m_EBO = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, MeshGenerator.m_CubeIndex, GL15.GL_STATIC_DRAW);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-		
-		GL30.glBindVertexArray(0);
+		m_CurrentShader = buildDefaultShader();
 		
 		m_Texture = new Texture();
 		m_Texture.bind();
@@ -47,35 +42,44 @@ public class Scene {
 		m_Texture.image2D(8, 8, genTexture(8, 8, 3));
 		m_Texture.unbind();
 		
-		Grid grid = new Grid(30, 30);
-		m_Model = ModelFactory.storeMesh(MeshGenerator.generateGridMesh(grid));
 	}
 	
-	public void render() {
+	public ArrayList<Actor> getModels() {
 		
-		GL30.glBindVertexArray(m_VAO);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, m_EBO);
-		
-		GL20.glEnableVertexAttribArray(GeometryRenderer.m_PositionLocation);
-		GL20.glEnableVertexAttribArray(GeometryRenderer.m_UVLocation);
-		GL20.glEnableVertexAttribArray(GeometryRenderer.m_NormalLocation);
-
-		GL20.glActiveTexture(GL20.GL_TEXTURE0);
-		m_Texture.bind();
-		
-		GL11.glDrawElements(GL11.GL_TRIANGLES, 36, GL11.GL_UNSIGNED_INT, 0);
-		
-		
-		
-		GL30.glBindVertexArray(m_Model.getVAO());
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, m_Model.getEBO());
-		
-		GL20.glEnableVertexAttribArray(GeometryRenderer.m_PositionLocation);
-		GL20.glEnableVertexAttribArray(GeometryRenderer.m_UVLocation);
-		GL20.glEnableVertexAttribArray(GeometryRenderer.m_NormalLocation);
-		
-		GL11.glDrawElements(GL11.GL_TRIANGLES, m_Model.getVertexCount(), GL11.GL_UNSIGNED_INT, 0);
+		return m_Actor;
 	}
+	
+	public void addActor(Actor _actor) {
+		
+		m_Actor.add(_actor);
+	}
+	
+	public Shader buildDefaultShader() {
+		
+		Shader shader = new Shader();
+		
+		String vert_source = Resources.loadFileToString("res/shaders/default.vert");
+		String frag_source = Resources.loadFileToString("res/shaders/default.frag");
+		
+		int vert_id = shader.addShader(GL20.GL_VERTEX_SHADER, vert_source);
+		int frag_id = shader.addShader(GL20.GL_FRAGMENT_SHADER, frag_source);
+		
+		shader.bindAttribLocation(GeometryRenderer.m_PositionLocation, "in_Position");
+		shader.bindAttribLocation(GeometryRenderer.m_UVLocation, "in_UV");
+		shader.bindAttribLocation(GeometryRenderer.m_NormalLocation, "in_Normal");
+		
+		shader.bindFragDataLocation(0, "out_Position");
+		shader.bindFragDataLocation(1, "out_Albedo");
+		shader.bindFragDataLocation(2, "out_Normal");
+		
+		shader.link();
+		
+		shader.removeShader(vert_id);
+		shader.removeShader(frag_id);
+		
+		return shader;
+	}
+	
 	
 	
 	public ByteBuffer genTexture(int _w, int _h, int _c) {
@@ -103,5 +107,14 @@ public class Scene {
 		
 		return buffer;
 	}
+	
+	
+	
+	
+	public Shader getCurrentShader() {
+		
+		return m_CurrentShader;
+	}
+	
 	
 }

@@ -108,12 +108,12 @@ public class MeshGenerator {
 				data[index + 1] 	= 0;
 				data[index + 2] 	= z;
 				
-				data[index + 3]   	= 0;
-				data[index + 4] 	= 1;
-				data[index + 5] 	= 0;
+				data[index + 3]   	= (float)(x) / width;
+				data[index + 4] 	= (float)(z) / height;
 				
-				data[index + 6]   	= (float)(x) / width;
-				data[index + 7] 	= (float)(z) / height;
+				data[index + 5]   	= 0;
+				data[index + 6] 	= 1;
+				data[index + 7] 	= 0;
 			}
 		}
 		

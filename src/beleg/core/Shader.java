@@ -1,5 +1,9 @@
 package beleg.core;
 
+import java.nio.FloatBuffer;
+
+import org.joml.Matrix4f;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -101,6 +105,16 @@ public class Shader {
 	
 	public int getProgram() {
 		return m_ProgramID;
+	}
+	
+	
+	public void setMat4(int _location, Matrix4f _matrix) {
+		
+		FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
+		buffer = _matrix.get(buffer);
+		
+		this.bind();
+		GL20.glUniformMatrix4fv(_location, false, buffer);
 	}
 	
 }

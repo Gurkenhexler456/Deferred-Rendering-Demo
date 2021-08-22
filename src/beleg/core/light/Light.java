@@ -5,7 +5,7 @@ import org.joml.Vector3f;
 public abstract class Light {
 
 	public static final int LIGHT_DIRECTIONAL = 0;
-	public static final int LIGHT_POINT = 0;
+	public static final int LIGHT_POINT = 1;
 	
 	private Vector3f m_Position;
 	private Vector3f m_Color;

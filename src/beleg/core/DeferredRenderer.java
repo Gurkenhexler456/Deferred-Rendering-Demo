@@ -39,8 +39,8 @@ public class DeferredRenderer {
 	private int m_UVLocation		= 1;
 	
 	private Texture 		m_Albedo;
-	private Texture 		m_Position;
-	private Texture 		m_Normal;
+	private FloatTexture 	m_Position;
+	private FloatTexture 	m_Normal;
 	private DepthTexture 	m_Depth;
 	
 	private int m_FBO;
@@ -54,7 +54,7 @@ public class DeferredRenderer {
 	
 	private Vector2i m_Resolution;
 	
-	private Light[] m_Lights = new Light[1];
+	private Light[] m_Lights = new Light[3];
 	private Vector3f m_Ambient = new Vector3f(1).mul(0.2f);
 	
 	
@@ -68,8 +68,8 @@ public class DeferredRenderer {
 		m_FBO = GL33.glGenFramebuffers();
 		
 		m_Albedo 	= new Texture();
-		m_Position 	= new Texture();
-		m_Normal 	= new Texture();
+		m_Position 	= new FloatTexture();
+		m_Normal 	= new FloatTexture();
 		m_Depth 	= new DepthTexture();
 		
 		m_DeferredShader = new Shader();
@@ -88,7 +88,6 @@ public class DeferredRenderer {
 		setupFramebuffer();
 		setupShader();
 		setupBuffers();
-		setupLights();
 	}
 	
 	private void setupTextures(int _width, int _height) {
@@ -187,45 +186,31 @@ public class DeferredRenderer {
 		GL30.glBindVertexArray(0);
 	}
 	
-	public void setupLights() {
-		
-		float x, y, step;
-		float r, g, b;
-		
-		step = (float)(2 * Math.PI) / m_Lights.length;
-		for(int i = 0; i < m_Lights.length; i++) {
-			
-			x = (float) Math.sin(step * i);
-			y = (float) Math.cos(step * i);
-			
-			r = (i % 3) == 0 ? 1.0f : 0.0f;
-			g = (i % 3) == 1 ? 1.0f : 0.0f;
-			b = (i % 3) == 2 ? 1.0f : 0.0f;
-			
-			m_Lights[i] = new DirectionalLight(new Vector3f(x, y, 0), new Vector3f(r, g, b));
-		}
+	
+	public void setLight(int _index, Light _light) {
 		
 		m_DeferredShader.bind();
 		
-		int ambiLoc 	= m_DeferredShader.getUniformLocation("u_Ambient");
-		GL20.glUniform3f(ambiLoc, m_Ambient.x, m_Ambient.y, m_Ambient.z);
+		int posLoc 	= m_DeferredShader.getUniformLocation("u_Lights[" + _index + "].position");
+		int colLoc 	= m_DeferredShader.getUniformLocation("u_Lights[" + _index + "].color");
+		int typeLoc = m_DeferredShader.getUniformLocation("u_Lights[" + _index + "].type");
 		
-		for(int i = 0; i < m_Lights.length; i++) {
-			
-			int posLoc 	= m_DeferredShader.getUniformLocation("u_Lights[" + i + "].position");
-			int colLoc 	= m_DeferredShader.getUniformLocation("u_Lights[" + i + "].color");
-			int typeLoc = m_DeferredShader.getUniformLocation("u_Lights[" + i + "].type");
-			
-			Vector3f position 	= m_Lights[i].getPosition();
-			Vector3f color 		= m_Lights[i].getColor();
-			int type 			= m_Lights[i].getType();
-			
-			GL20.glUniform3f(posLoc, position.x, position.y, position.z);
-			GL20.glUniform3f(colLoc, color.x, color.y, color.z);
-			GL20.glUniform1i(typeLoc, type);
-		}
+		Vector3f position 	= _light.getPosition();
+		Vector3f color 		= _light.getColor();
+		int type 			= _light.getType();
 		
-		m_DeferredShader.unbind();
+		GL20.glUniform3f(posLoc, position.x, position.y, position.z);
+		GL20.glUniform3f(colLoc, color.x, color.y, color.z);
+		GL20.glUniform1i(typeLoc, type);
+	}
+	
+	public void setAmbient(Vector3f _color) {
+		
+		m_DeferredShader.bind();
+		
+		int ambientLoc = m_DeferredShader.getUniformLocation("u_Ambient");
+		
+		GL20.glUniform3f(ambientLoc, _color.x, _color.y, _color.z);
 	}
 	
 	

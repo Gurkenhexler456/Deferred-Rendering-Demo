@@ -1,6 +1,6 @@
 #version 330 core
 
-#define LIGHT_COUNT 1
+#define LIGHT_COUNT 3
 
 #define LIGHT_DIRECTIONAL 0
 #define LIGHT_POINT 1
@@ -79,8 +79,8 @@ void main() {
 
 	normal = (normal * 2) - 1;
 
-	vec3 color = processLights(position, normal);
+	vec3 color = processLights(position, normal);	
 	color += u_Ambient * vec3(albedo);
 
-	out_Color = vec4(vec3(position), 1.0);
+	out_Color = vec4(vec3(color), 1.0);
 }

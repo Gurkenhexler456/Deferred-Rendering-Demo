@@ -10,6 +10,7 @@ import org.lwjgl.glfw.GLFWGammaRamp;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL33;
 import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.GLUtil;
@@ -17,6 +18,8 @@ import org.lwjgl.system.Callback;
 
 import beleg.core.graphics.Model;
 import beleg.core.graphics.ModelFactory;
+import beleg.core.light.DirectionalLight;
+import beleg.core.light.PointLight;
 
 public class Main {
 
@@ -32,6 +35,8 @@ public class Main {
 	private Matrix4f m_View;
 	private Matrix4f m_Model;
 	private Matrix4f m_ModelTerrain;
+	
+	public Texture m_Texture;
 	
 	public static void main(String[] args) {
 		
@@ -123,7 +128,7 @@ public class Main {
 	public void loop() {
 		
 		m_Renderer = new DeferredRenderer();
-		m_Renderer.setup(1280, 720);
+		m_Renderer.setup(m_WindowSize.x, m_WindowSize.y);
 		
 		m_GeometryRenderer = new GeometryRenderer();
 		
@@ -142,7 +147,7 @@ public class Main {
 		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 50.0f);
 		
 		m_View.rotate((float)Math.toRadians(30), 1, 0, 0);
-		m_View.translate(0, -2, -3f);
+		m_View.translate(0, -2, -4);
 		
 		Vector3f rotation = new Vector3f(0, 1, 0).normalize();
 		
@@ -159,26 +164,35 @@ public class Main {
 		m_Scene.getCurrentShader().setMat4(viewLoc, m_View);
 		
 		Model cubeModel = ModelFactory.storeMesh(new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex));
-		Model terrainModel = ModelFactory.storeMesh(MeshGenerator.generateGridMesh(new Grid(30, 30)));
+		Model terrainModel = ModelFactory.storeMesh(MeshGenerator.generateGridMesh(new Grid(16, 16)));
+		
 		Actor cube = new Actor(m_Model, cubeModel);
 		Actor terrain = new Actor(m_ModelTerrain, terrainModel);
 		
 		m_Scene.addActor(cube);
 		m_Scene.addActor(terrain);
 		
+		m_Texture = new Texture();
+		m_Texture.bind();
+		m_Texture.setFilteringAndWrapping(GL11.GL_NEAREST, GL11.GL_REPEAT);
+		m_Texture.image2D(16, 16, TextureGenerator.genTexture(16, 16, 3));
+		m_Texture.unbind();
+		
+		float lightXDir, lightYDir;
+		
+		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
+		
+			m_ModelTerrain.identity();
+			m_ModelTerrain.translate(-8, 0, -8);
 			
 			m_Model.identity();
-			m_Model.rotate((float)Math.toRadians(GLFW.glfwGetTime() * -50), rotation);
-			m_Model.translate(	-0.5f, 
-								(float)Math.sin(GLFW.glfwGetTime()) * 0.5f, 
-								-0.5f);
-			
-			m_ModelTerrain.identity();
-			m_ModelTerrain.rotate((float)Math.toRadians(GLFW.glfwGetTime() * 50), rotation);
-			m_ModelTerrain.translate(-15f, -0.5f, -15f);
+			m_Model.rotate((float) Math.toRadians(-GLFW.glfwGetTime() * 25), new Vector3f(0, 1, 0));
+			m_Model.translate(-0.5f, 0, -0.5f);
 			
 			
+			lightXDir = (float) Math.cos(GLFW.glfwGetTime() * 0.1);
+			lightYDir = (float) Math.sin(GLFW.glfwGetTime() * 0.1);
 			
 			/*
 			 * geometry render pass
@@ -197,6 +211,8 @@ public class Main {
 			//m_Scene.render();
 			
 			m_GeometryRenderer.useShader(m_Scene.getCurrentShader());
+			GL20.glActiveTexture(GL20.GL_TEXTURE0);
+			m_Texture.bind();
 			for(Actor m : m_Scene.getModels()) {
 			
 				m_Scene.getCurrentShader().setMat4(modelLoc, m.m_Transform);
@@ -213,6 +229,29 @@ public class Main {
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
 			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
 			
+			
+			float dtAng = (float) GLFW.glfwGetTime();
+			float rAng = dtAng;
+			float gAng = (float)((1.0f / 3.0f) * Math.PI * 2.0f) + dtAng;
+			float bAng = (float)((2.0f / 3.0f) * Math.PI * 2.0f) + dtAng;
+			
+			m_Renderer.setLight(0, new DirectionalLight(new Vector3f(lightXDir,  lightYDir, 0), new Vector3f(1)));
+			m_Renderer.setLight(0, 
+					new PointLight(	new Vector3f(	3 * (float)Math.sin(rAng), 
+													3, 
+													3 * (float)Math.cos(rAng)), 
+									new Vector3f(1, 0, 0)));
+			m_Renderer.setLight(1, 
+					new PointLight(	new Vector3f(	3 * (float)Math.sin(gAng), 
+													3, 
+													3 * (float)Math.cos(gAng)), 
+									new Vector3f(0, 1, 0)));
+			m_Renderer.setLight(2, 
+					new PointLight(	new Vector3f(	3 * (float)Math.sin(bAng), 
+													3, 
+													3 * (float)Math.cos(bAng)), 
+									new Vector3f(0, 0, 1)));
+			m_Renderer.setAmbient(new Vector3f(0.2f));
 			m_Renderer.render();
 			
 				

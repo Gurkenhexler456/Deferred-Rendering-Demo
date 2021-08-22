@@ -19,11 +19,6 @@ import org.lwjgl.opengl.GL20;
  * @author Tobias Hofmann
  */
 public class Scene {
-
-	public int m_VAO;
-	public int m_VBO;
-	public int m_EBO;
-	public Texture m_Texture;
 	
 	public Model m_Terrain;
 	
@@ -34,14 +29,7 @@ public class Scene {
 	
 	public void load() {
 		
-		m_CurrentShader = buildDefaultShader();
-		
-		m_Texture = new Texture();
-		m_Texture.bind();
-		m_Texture.setFilteringAndWrapping(GL11.GL_NEAREST, GL11.GL_REPEAT);
-		m_Texture.image2D(8, 8, genTexture(8, 8, 3));
-		m_Texture.unbind();
-		
+		m_CurrentShader = buildDefaultShader();	
 	}
 	
 	public ArrayList<Actor> getModels() {
@@ -78,34 +66,6 @@ public class Scene {
 		shader.removeShader(frag_id);
 		
 		return shader;
-	}
-	
-	
-	
-	public ByteBuffer genTexture(int _w, int _h, int _c) {
-		
-		byte[] data = new byte[_w * _h * _c];
-		ByteBuffer buffer = BufferUtils.createByteBuffer(data.length);
-		
-		int index;
-		
-		for(int y = 0; y < _h; y++) {
-			
-			for(int x = 0; x < _w; x++) {
-				
-				index = _c * (y * _w + x);
-				
-				for(int i = 0; i < _c; i++) {
-					
-					data[index + i] = (byte) (((x + y) % 2) * 0xff);
-				}
-			}
-		}
-		
-		buffer.put(data);
-		buffer.flip();
-		
-		return buffer;
 	}
 	
 	

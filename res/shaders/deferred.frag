@@ -77,7 +77,6 @@ void main() {
 	
 	float depth 		= texture(u_Depth, vf_UV).x;
 
-	normal = (normal * 2) - 1;
 
 	vec3 color = processLights(position, normal);	
 	color += u_Ambient * vec3(albedo);

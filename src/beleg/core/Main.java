@@ -20,6 +20,7 @@ import beleg.core.graphics.Model;
 import beleg.core.graphics.ModelFactory;
 import beleg.core.light.DirectionalLight;
 import beleg.core.light.PointLight;
+import beleg.core.scene.Actor;
 
 public class Main {
 

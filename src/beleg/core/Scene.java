@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL30;
 
 import beleg.core.graphics.Model;
 import beleg.core.graphics.ModelFactory;
+import beleg.core.scene.Actor;
 
 import org.lwjgl.opengl.GL20;
 

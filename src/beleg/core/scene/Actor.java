@@ -1,4 +1,4 @@
-package beleg.core;
+package beleg.core.scene;
 
 import org.joml.Matrix4f;
 

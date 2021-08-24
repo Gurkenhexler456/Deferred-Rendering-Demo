@@ -6,8 +6,8 @@ import beleg.core.graphics.DepthTexture;
 import beleg.core.graphics.FloatTexture;
 import beleg.core.graphics.Shader;
 import beleg.core.graphics.Texture;
-import beleg.core.light.DirectionalLight;
-import beleg.core.light.Light;
+import beleg.core.graphics.lighting.DirectionalLight;
+import beleg.core.graphics.lighting.Light;
 
 import org.lwjgl.opengl.GL20;
 

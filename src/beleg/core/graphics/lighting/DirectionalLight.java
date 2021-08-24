@@ -1,4 +1,4 @@
-package beleg.core.light;
+package beleg.core.graphics.lighting;
 
 import org.joml.Vector3f;
 

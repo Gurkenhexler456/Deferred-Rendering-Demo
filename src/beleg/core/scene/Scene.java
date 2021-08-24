@@ -38,32 +38,4 @@ public class Scene {
 	
 		m_Actor.add(_actor);
 	}
-	
-	
-	
-	public Shader buildDefaultShader() {
-		
-		Shader shader = new Shader();
-		
-		String vert_source = Resources.loadFileToString("res/shaders/default.vert");
-		String frag_source = Resources.loadFileToString("res/shaders/default.frag");
-		
-		int vert_id = shader.addShader(GL20.GL_VERTEX_SHADER, vert_source);
-		int frag_id = shader.addShader(GL20.GL_FRAGMENT_SHADER, frag_source);
-		
-		shader.bindAttribLocation(GeometryRenderer.m_PositionLocation, "in_Position");
-		shader.bindAttribLocation(GeometryRenderer.m_UVLocation, "in_UV");
-		shader.bindAttribLocation(GeometryRenderer.m_NormalLocation, "in_Normal");
-		
-		shader.bindFragDataLocation(0, "out_Position");
-		shader.bindFragDataLocation(1, "out_Albedo");
-		shader.bindFragDataLocation(2, "out_Normal");
-		
-		shader.link();
-		
-		shader.removeShader(vert_id);
-		shader.removeShader(frag_id);
-		
-		return shader;
-	}
 }

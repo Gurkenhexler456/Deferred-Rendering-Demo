@@ -5,20 +5,27 @@ import java.util.ArrayList;
 
 import org.joml.Matrix4f;
 
-import beleg.core.graphics.Model;
 
 
 public class Actor {
 
 	public Matrix4f m_Transform;
-	public Model m_Model;
 	private ArrayList<Component> m_Components;
 	
-	public Actor(Matrix4f _transform, Model _model) {
+	public Actor() {
 		
-		m_Transform 	= _transform;
-		m_Model 		= _model;
+		m_Transform 	= new Matrix4f().identity();
 		m_Components 	= new ArrayList<>();
+	}
+	
+	public void setTransform(Matrix4f _transform) {
+		
+		m_Transform.set(_transform);
+	}
+	
+	public Matrix4f getTransform() {
+		
+		return m_Transform;
 	}
 	
 	public void addComponent(Component _component) {
@@ -29,6 +36,7 @@ public class Actor {
 		}
 		
 		m_Components.add(_component);
+		_component.setParent(this);
 	}
 	
 	public <T extends Component> T getComponent(Class<T> _class) {

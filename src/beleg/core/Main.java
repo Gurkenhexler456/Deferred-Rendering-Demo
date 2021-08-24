@@ -22,8 +22,8 @@ import beleg.core.graphics.ModelFactory;
 import beleg.core.graphics.Shader;
 import beleg.core.graphics.Texture;
 import beleg.core.graphics.TextureGenerator;
-import beleg.core.light.DirectionalLight;
-import beleg.core.light.PointLight;
+import beleg.core.graphics.lighting.DirectionalLight;
+import beleg.core.graphics.lighting.PointLight;
 import beleg.core.scene.Scene;
 import beleg.core.scene.ecs.Actor;
 
@@ -41,6 +41,8 @@ public class Main {
 	private Matrix4f m_Projection;
 	private Matrix4f m_View;
 	private Matrix4f m_Model;
+	private Matrix4f m_Model2;
+	private Matrix4f m_Model3;
 	private Matrix4f m_ModelTerrain;
 	
 	public Texture m_Texture;
@@ -141,7 +143,7 @@ public class Main {
 	public void loop() {
 		
 		m_Resolution.set(m_WindowSize);
-		setRenderResolution(0.25f);
+		setRenderResolution(1);
 		
 		
 		m_Renderer = new DeferredRenderer();
@@ -154,42 +156,23 @@ public class Main {
 		
 		m_Model = new Matrix4f().identity();
 		m_ModelTerrain = new Matrix4f().identity();
+		m_Model2 = new Matrix4f().identity();
+		m_Model3 = new Matrix4f().identity();
 		
 		
-		m_Scene = new Scene();
-		m_Scene.load();
-		
-		
-		m_Scene.getCurrentShader().bind();
 		
 		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
 		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 50.0f);
 		
 		m_View.rotate((float)Math.toRadians(30), 1, 0, 0);
-		m_View.translate(0, -2, -4);
+		m_View.translate(0, -4, -8);
 		
 		Vector3f rotation = new Vector3f(0, 1, 0).normalize();
 		
 		
-		Grid grid = new Grid(1, 1);
-		Mesh mesh = MeshGenerator.generateGridMesh(grid); 
+		m_Scene = loadTestScene();
+		m_Scene.load();
 		
-		
-		int projLoc = m_Scene.getCurrentShader().getUniformLocation("u_Projection");
-		int viewLoc = m_Scene.getCurrentShader().getUniformLocation("u_View");
-		int modelLoc = m_Scene.getCurrentShader().getUniformLocation("u_Model");
-		
-		m_Scene.getCurrentShader().setMat4(projLoc, m_Projection);
-		m_Scene.getCurrentShader().setMat4(viewLoc, m_View);
-		
-		Model cubeModel = ModelFactory.buildDefaultModel(new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex));
-		Model terrainModel = ModelFactory.buildDefaultModel(MeshGenerator.generateGridMesh(new Grid(16, 16)));
-		
-		Actor cube = new Actor(m_Model, cubeModel);
-		Actor terrain = new Actor(m_ModelTerrain, terrainModel);
-		
-		m_Scene.addActor(cube);
-		m_Scene.addActor(terrain);
 		
 		m_Texture = new Texture();
 		m_Texture.bind();
@@ -203,11 +186,22 @@ public class Main {
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 		
 			m_ModelTerrain.identity();
-			m_ModelTerrain.translate(-8, 0, -8);
+			m_ModelTerrain.translate(-8, -2, -8);
+			
+			float pos = (float) Math.sin(Math.toRadians(-GLFW.glfwGetTime() * 25)) + 3;
+			float angle = (float) Math.toRadians(-GLFW.glfwGetTime() * 25);
 			
 			m_Model.identity();
-			m_Model.rotate((float) Math.toRadians(-GLFW.glfwGetTime() * 25), new Vector3f(0, 1, 0));
-			m_Model.translate(-0.5f, 0, -0.5f);
+			m_Model.rotate(angle, new Vector3f(1, 0, 0));
+			m_Model.translate(pos, -0.5f, -0.5f);
+			
+			m_Model2.identity();
+			m_Model2.rotate(angle, new Vector3f(0, 1, 0));
+			m_Model2.translate(-0.5f, pos, -0.5f);
+			
+			m_Model3.identity();
+			m_Model3.rotate(angle, new Vector3f(0, 0, 1));
+			m_Model3.translate(-0.5f, -0.5f, pos);
 			
 			
 			lightXDir = (float) Math.cos(GLFW.glfwGetTime() * 0.1);
@@ -219,7 +213,7 @@ public class Main {
 			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
 			
 			m_Renderer.setViewport();
-			GL11.glClearColor(1.0f, 0.5f, 0.25f, 1.0f);
+			GL11.glClearColor(0, 0, 0, 1.0f);
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			
 			//GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);	
@@ -238,6 +232,8 @@ public class Main {
 				GL20.glActiveTexture(GL20.GL_TEXTURE0);
 				m_Texture.bind();
 				
+				material.getShader().setMat4("u_Projection", m_Projection);
+				material.getShader().setMat4("u_View", m_View);
 				material.getShader().setMat4("u_Model", actor.m_Transform);
 				
 				
@@ -263,17 +259,17 @@ public class Main {
 			m_Renderer.setLight(0, new DirectionalLight(new Vector3f(lightXDir,  lightYDir, 0), new Vector3f(1)));
 			m_Renderer.setLight(0, 
 					new PointLight(	new Vector3f(	3 * (float)Math.sin(rAng), 
-													3, 
+													(float)Math.sin(rAng), 
 													3 * (float)Math.cos(rAng)), 
 									new Vector3f(1, 0, 0)));
 			m_Renderer.setLight(1, 
 					new PointLight(	new Vector3f(	3 * (float)Math.sin(gAng), 
-													3, 
+													(float)Math.sin(gAng),
 													3 * (float)Math.cos(gAng)), 
 									new Vector3f(0, 1, 0)));
 			m_Renderer.setLight(2, 
 					new PointLight(	new Vector3f(	3 * (float)Math.sin(bAng), 
-													3, 
+													(float)Math.sin(bAng),
 													3 * (float)Math.cos(bAng)), 
 									new Vector3f(0, 0, 1)));
 			m_Renderer.setAmbient(new Vector3f(0.2f));
@@ -294,6 +290,82 @@ public class Main {
 		GLFW.glfwDestroyWindow(m_Window);
 		
 		GLFW.glfwTerminate();
+	}
+	
+	
+	
+	
+public Scene loadTestScene() {
+		
+		Material defaultMaterial = new Material(buildDefaultShader());
+		
+		Actor cube = new Actor();
+		cube.addComponent(defaultMaterial);
+		cube.addComponent(
+				ModelFactory.buildDefaultModel(
+						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
+				));
+		m_Model = cube.getTransform();
+		
+		Actor cube2 = new Actor();
+		cube2.addComponent(defaultMaterial);
+		cube2.addComponent(
+				ModelFactory.buildDefaultModel(
+						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
+				));
+		m_Model2 = cube2.getTransform();
+		
+		Actor cube3 = new Actor();
+		cube3.addComponent(defaultMaterial);
+		cube3.addComponent(
+				ModelFactory.buildDefaultModel(
+						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
+				));
+		m_Model3 = cube3.getTransform();
+		
+		Actor terrain = new Actor();
+		terrain.addComponent(defaultMaterial);
+		terrain.addComponent(
+				ModelFactory.buildDefaultModel(
+						MeshGenerator.generateGridMesh(new Grid(16, 16))
+				));
+		m_ModelTerrain = terrain.getTransform();
+		
+		Scene result = new Scene();
+		
+		result.addActor(cube);
+		result.addActor(terrain);
+		result.addActor(cube2);
+		result.addActor(cube3);
+		
+		
+		return result;
+	}
+	
+	public Shader buildDefaultShader() {
+		
+		Shader shader = new Shader();
+		
+		String vert_source = Resources.loadFileToString("res/shaders/default.vert");
+		String frag_source = Resources.loadFileToString("res/shaders/default.frag");
+		
+		int vert_id = shader.addShader(GL20.GL_VERTEX_SHADER, vert_source);
+		int frag_id = shader.addShader(GL20.GL_FRAGMENT_SHADER, frag_source);
+		
+		shader.bindAttribLocation(GeometryRenderer.m_PositionLocation, "in_Position");
+		shader.bindAttribLocation(GeometryRenderer.m_UVLocation, "in_UV");
+		shader.bindAttribLocation(GeometryRenderer.m_NormalLocation, "in_Normal");
+		
+		shader.bindFragDataLocation(0, "out_Position");
+		shader.bindFragDataLocation(1, "out_Albedo");
+		shader.bindFragDataLocation(2, "out_Normal");
+		
+		shader.link();
+		
+		shader.removeShader(vert_id);
+		shader.removeShader(frag_id);
+		
+		return shader;
 	}
 	
 }

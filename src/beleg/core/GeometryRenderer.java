@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
 import beleg.core.graphics.Model;
+import beleg.core.graphics.Shader;
 
 public class GeometryRenderer {
 

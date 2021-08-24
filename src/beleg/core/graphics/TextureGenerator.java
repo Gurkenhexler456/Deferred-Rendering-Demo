@@ -1,4 +1,4 @@
-package beleg.core;
+package beleg.core.graphics;
 
 import java.nio.ByteBuffer;
 

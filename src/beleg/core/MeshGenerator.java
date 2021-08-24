@@ -78,6 +78,25 @@ public class MeshGenerator {
 	};
 	
 	
+	public static final float[] m_AxisData = {
+			
+		0.0f,	0.0f,	0.0f,		1.0f,	0.0f,	0.0f,
+		1.0f,	0.0f,	0.0f,		1.0f,	0.0f,	0.0f,
+		
+		0.0f,	0.0f,	0.0f,		0.0f,	1.0f,	0.0f,
+		0.0f,	1.0f,	0.0f,		0.0f,	1.0f,	0.0f,
+		
+		0.0f,	0.0f,	0.0f,		0.0f,	0.0f,	1.0f,
+		0.0f,	0.0f,	1.0f,		0.0f,	0.0f,	1.0f
+	};
+	
+	public static final int[] m_AxisIndices = {
+			
+		0,	1,
+		2,	3,
+		4,	5
+	};
+	
 	
 	
 	

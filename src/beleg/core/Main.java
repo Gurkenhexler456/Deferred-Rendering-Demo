@@ -18,6 +18,8 @@ import org.lwjgl.system.Callback;
 
 import beleg.core.graphics.Model;
 import beleg.core.graphics.ModelFactory;
+import beleg.core.graphics.Texture;
+import beleg.core.graphics.TextureGenerator;
 import beleg.core.light.DirectionalLight;
 import beleg.core.light.PointLight;
 import beleg.core.scene.Actor;
@@ -164,8 +166,8 @@ public class Main {
 		m_Scene.getCurrentShader().setMat4(projLoc, m_Projection);
 		m_Scene.getCurrentShader().setMat4(viewLoc, m_View);
 		
-		Model cubeModel = ModelFactory.storeMesh(new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex));
-		Model terrainModel = ModelFactory.storeMesh(MeshGenerator.generateGridMesh(new Grid(16, 16)));
+		Model cubeModel = ModelFactory.buildDefaultModel(new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex));
+		Model terrainModel = ModelFactory.buildDefaultModel(MeshGenerator.generateGridMesh(new Grid(16, 16)));
 		
 		Actor cube = new Actor(m_Model, cubeModel);
 		Actor terrain = new Actor(m_ModelTerrain, terrainModel);

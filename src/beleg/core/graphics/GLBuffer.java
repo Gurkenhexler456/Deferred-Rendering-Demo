@@ -1,4 +1,4 @@
-package beleg.core;
+package beleg.core.graphics;
 
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;

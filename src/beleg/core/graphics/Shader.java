@@ -1,8 +1,10 @@
-package beleg.core;
+package beleg.core.graphics;
 
 import java.nio.FloatBuffer;
+import java.util.HashMap;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
@@ -11,7 +13,9 @@ import org.lwjgl.opengl.GL30;
 public class Shader {
 
 	
-	public int m_ProgramID;
+	private int m_ProgramID;
+	private HashMap<String, Integer> m_Attributes;
+	private HashMap<String, Integer> m_Uniforms;
 	
 	
 	public Shader() {
@@ -21,7 +25,9 @@ public class Shader {
 	
 	public Shader(int programID) {
 		
-		m_ProgramID = programID;
+		m_ProgramID 	= programID;
+		m_Attributes 	= new HashMap<String, Integer>();
+		m_Uniforms 		= new HashMap<String, Integer>();
 	}
 	
 	
@@ -94,12 +100,18 @@ public class Shader {
 	
 	public int getAttributeLocation(String _name) {
 		
-		return GL20.glGetAttribLocation(m_ProgramID, _name);
+		if(! m_Attributes.containsKey(_name)) {
+			m_Attributes.put(_name, GL20.glGetAttribLocation(m_ProgramID, _name));
+		}
+		return m_Attributes.get(_name);
 	}
 	
 	public int getUniformLocation(String _name) {
 		
-		return GL20.glGetUniformLocation(m_ProgramID, _name);
+		if(! m_Uniforms.containsKey(_name)) {
+			m_Uniforms.put(_name, GL20.glGetUniformLocation(m_ProgramID, _name));
+		}
+		return m_Uniforms.get(_name);
 	}
 	
 	
@@ -113,8 +125,15 @@ public class Shader {
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 		buffer = _matrix.get(buffer);
 		
-		this.bind();
 		GL20.glUniformMatrix4fv(_location, false, buffer);
+	}
+	
+	public void setVec3(int _location, Vector3f _vector) {
+		
+		FloatBuffer buffer = BufferUtils.createFloatBuffer(3);
+		buffer = _vector.get(buffer);
+		;
+		GL20.glUniform3fv(_location, buffer);
 	}
 	
 }

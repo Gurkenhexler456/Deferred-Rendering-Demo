@@ -16,13 +16,16 @@ import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
 
+import beleg.core.graphics.Material;
 import beleg.core.graphics.Model;
 import beleg.core.graphics.ModelFactory;
+import beleg.core.graphics.Shader;
 import beleg.core.graphics.Texture;
 import beleg.core.graphics.TextureGenerator;
 import beleg.core.light.DirectionalLight;
 import beleg.core.light.PointLight;
-import beleg.core.scene.Actor;
+import beleg.core.scene.Scene;
+import beleg.core.scene.ecs.Actor;
 
 public class Main {
 
@@ -33,6 +36,7 @@ public class Main {
 	private Scene m_Scene;
 	
 	private Vector2i m_WindowSize = new Vector2i(960, 540);
+	private Vector2i m_Resolution = new Vector2i();
 	
 	private Matrix4f m_Projection;
 	private Matrix4f m_View;
@@ -128,10 +132,20 @@ public class Main {
 		}
 	}
 	
+	public void setRenderResolution(float _percentage) {
+		
+		m_Resolution.x = (int) (m_Resolution.x * _percentage);
+		m_Resolution.y = (int) (m_Resolution.y * _percentage);
+	}
+	
 	public void loop() {
 		
+		m_Resolution.set(m_WindowSize);
+		setRenderResolution(0.25f);
+		
+		
 		m_Renderer = new DeferredRenderer();
-		m_Renderer.setup(m_WindowSize.x, m_WindowSize.y);
+		m_Renderer.setup(m_Resolution.x, m_Resolution.y);
 		
 		m_GeometryRenderer = new GeometryRenderer();
 		
@@ -145,6 +159,8 @@ public class Main {
 		m_Scene = new Scene();
 		m_Scene.load();
 		
+		
+		m_Scene.getCurrentShader().bind();
 		
 		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
 		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 50.0f);
@@ -213,13 +229,19 @@ public class Main {
 			
 			//m_Scene.render();
 			
-			m_GeometryRenderer.useShader(m_Scene.getCurrentShader());
-			GL20.glActiveTexture(GL20.GL_TEXTURE0);
-			m_Texture.bind();
-			for(Actor m : m_Scene.getModels()) {
+			for(Actor actor : m_Scene.getActors()) {
 			
-				m_Scene.getCurrentShader().setMat4(modelLoc, m.m_Transform);
-				m_GeometryRenderer.render(m.m_Model);
+				Material material = actor.getComponent(Material.class);
+				Model model = actor.getComponent(Model.class);
+				material.bind();
+				
+				GL20.glActiveTexture(GL20.GL_TEXTURE0);
+				m_Texture.bind();
+				
+				material.getShader().setMat4("u_Model", actor.m_Transform);
+				
+				
+				m_GeometryRenderer.render(model);
 			}
 			
 			

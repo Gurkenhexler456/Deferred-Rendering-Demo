@@ -1,48 +1,45 @@
-package beleg.core;
+package beleg.core.scene;
 
-import java.nio.ByteBuffer;
+
 import java.util.ArrayList;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
-
-import beleg.core.graphics.Model;
-import beleg.core.graphics.ModelFactory;
-import beleg.core.graphics.Shader;
-import beleg.core.scene.Actor;
 
 import org.lwjgl.opengl.GL20;
 
+import beleg.core.GeometryRenderer;
+import beleg.core.Resources;
+import beleg.core.graphics.Shader;
+import beleg.core.scene.ecs.Actor;
+
+
 /**
  * This class implements a Scene used by the application.
- * It stores all components
+ * It stores all it's components
  * @author Tobias Hofmann
  */
 public class Scene {
 	
-	public Model m_Terrain;
 	
-	public Shader m_CurrentShader;
 	
-	public ArrayList<Actor> m_Actor = new ArrayList<Actor>();
-	public ArrayList<Shader> m_Shaders;
+	private ArrayList<Actor> m_Actor = new ArrayList<Actor>();
+	
+	
 	
 	public void load() {
 		
-		m_CurrentShader = buildDefaultShader();	
+		
 	}
 	
-	public ArrayList<Actor> getModels() {
+	public ArrayList<Actor> getActors() {
 		
 		return m_Actor;
 	}
 	
 	public void addActor(Actor _actor) {
-		
+	
 		m_Actor.add(_actor);
 	}
+	
+	
 	
 	public Shader buildDefaultShader() {
 		
@@ -69,14 +66,4 @@ public class Scene {
 		
 		return shader;
 	}
-	
-	
-	
-	
-	public Shader getCurrentShader() {
-		
-		return m_CurrentShader;
-	}
-	
-	
 }

@@ -1,6 +1,8 @@
 package beleg.core.graphics;
 
-public class Model {
+import beleg.core.scene.ecs.Component;
+
+public class Model extends Component {
 
 	private int m_VAO;
 	private int m_VBO;

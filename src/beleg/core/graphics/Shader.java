@@ -120,20 +120,22 @@ public class Shader {
 	}
 	
 	
-	public void setMat4(int _location, Matrix4f _matrix) {
+	public void setMat4(String _name, Matrix4f _matrix) {
 		
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(16);
 		buffer = _matrix.get(buffer);
+		int location = getUniformLocation(_name);
 		
-		GL20.glUniformMatrix4fv(_location, false, buffer);
+		GL20.glUniformMatrix4fv(location, false, buffer);
 	}
 	
-	public void setVec3(int _location, Vector3f _vector) {
+	public void setVec3(String _name, Vector3f _vector) {
 		
 		FloatBuffer buffer = BufferUtils.createFloatBuffer(3);
 		buffer = _vector.get(buffer);
-		;
-		GL20.glUniform3fv(_location, buffer);
+		int location = getUniformLocation(_name);
+		
+		GL20.glUniform3fv(location, buffer);
 	}
 	
 }

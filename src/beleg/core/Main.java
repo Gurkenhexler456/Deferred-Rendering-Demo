@@ -42,9 +42,6 @@ public class Main {
 	
 	private Matrix4f m_Projection;
 	private Matrix4f m_View;
-	private Matrix4f m_Model;
-	private Matrix4f m_Model2;
-	private Matrix4f m_Model3;
 	private Matrix4f m_ModelTerrain;
 	
 	public Texture m_Texture;
@@ -145,7 +142,7 @@ public class Main {
 	public void loop() {
 		
 		m_Resolution.set(m_WindowSize);
-		setRenderResolution(1);
+		setRenderResolution(0.5f);
 		
 		
 		m_Renderer = new DeferredRenderer();
@@ -156,10 +153,7 @@ public class Main {
 		m_Projection = new Matrix4f().identity();
 		m_View = new Matrix4f().identity();
 		
-		m_Model = new Matrix4f().identity();
 		m_ModelTerrain = new Matrix4f().identity();
-		m_Model2 = new Matrix4f().identity();
-		m_Model3 = new Matrix4f().identity();
 		
 		
 		
@@ -308,7 +302,6 @@ public class Main {
 						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
 				));
 		cube.addComponent(new RotationBehaviour(cube, new Vector3f(1, 0, 0)));
-		m_Model = cube.getTransform();
 		
 		Actor cube2 = new Actor();
 		cube2.addComponent(defaultMaterial);
@@ -317,7 +310,6 @@ public class Main {
 						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
 				));
 		cube2.addComponent(new RotationBehaviour(cube2, new Vector3f(0, 1, 0)));
-		m_Model2 = cube2.getTransform();
 		
 		Actor cube3 = new Actor();
 		cube3.addComponent(defaultMaterial);
@@ -326,7 +318,7 @@ public class Main {
 						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
 				));
 		cube3.addComponent(new RotationBehaviour(cube3, new Vector3f(0, 0, 1)));
-		m_Model3 = cube3.getTransform();
+		
 		
 		Actor terrain = new Actor();
 		terrain.addComponent(defaultMaterial);

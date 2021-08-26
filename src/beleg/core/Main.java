@@ -24,8 +24,10 @@ import beleg.core.graphics.Texture;
 import beleg.core.graphics.TextureGenerator;
 import beleg.core.graphics.lighting.DirectionalLight;
 import beleg.core.graphics.lighting.PointLight;
+import beleg.core.scene.Behaviour;
 import beleg.core.scene.Scene;
 import beleg.core.scene.ecs.Actor;
+import beleg.demo.RotationBehaviour;
 
 public class Main {
 
@@ -185,23 +187,23 @@ public class Main {
 		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 		
+			for(Actor actor : m_Scene.getActors()) {
+				
+				Behaviour b = actor.getComponent(Behaviour.class);
+				
+				if(b != null) {
+					
+					b.update();
+				}
+			}
+			
+			
 			m_ModelTerrain.identity();
 			m_ModelTerrain.translate(-8, -2, -8);
 			
 			float pos = (float) Math.sin(Math.toRadians(-GLFW.glfwGetTime() * 25)) + 3;
 			float angle = (float) Math.toRadians(-GLFW.glfwGetTime() * 25);
 			
-			m_Model.identity();
-			m_Model.rotate(angle, new Vector3f(1, 0, 0));
-			m_Model.translate(pos, -0.5f, -0.5f);
-			
-			m_Model2.identity();
-			m_Model2.rotate(angle, new Vector3f(0, 1, 0));
-			m_Model2.translate(-0.5f, pos, -0.5f);
-			
-			m_Model3.identity();
-			m_Model3.rotate(angle, new Vector3f(0, 0, 1));
-			m_Model3.translate(-0.5f, -0.5f, pos);
 			
 			
 			lightXDir = (float) Math.cos(GLFW.glfwGetTime() * 0.1);
@@ -234,7 +236,7 @@ public class Main {
 				
 				material.getShader().setMat4("u_Projection", m_Projection);
 				material.getShader().setMat4("u_View", m_View);
-				material.getShader().setMat4("u_Model", actor.m_Transform);
+				material.getShader().setMat4("u_Model", actor.getTransform());
 				
 				
 				m_GeometryRenderer.render(model);
@@ -295,7 +297,7 @@ public class Main {
 	
 	
 	
-public Scene loadTestScene() {
+	public Scene loadTestScene() {
 		
 		Material defaultMaterial = new Material(buildDefaultShader());
 		
@@ -305,6 +307,7 @@ public Scene loadTestScene() {
 				ModelFactory.buildDefaultModel(
 						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
 				));
+		cube.addComponent(new RotationBehaviour(cube, new Vector3f(1, 0, 0)));
 		m_Model = cube.getTransform();
 		
 		Actor cube2 = new Actor();
@@ -313,6 +316,7 @@ public Scene loadTestScene() {
 				ModelFactory.buildDefaultModel(
 						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
 				));
+		cube2.addComponent(new RotationBehaviour(cube2, new Vector3f(0, 1, 0)));
 		m_Model2 = cube2.getTransform();
 		
 		Actor cube3 = new Actor();
@@ -321,6 +325,7 @@ public Scene loadTestScene() {
 				ModelFactory.buildDefaultModel(
 						new Mesh(MeshGenerator.m_CubeData, MeshGenerator.m_CubeIndex)
 				));
+		cube3.addComponent(new RotationBehaviour(cube3, new Vector3f(0, 0, 1)));
 		m_Model3 = cube3.getTransform();
 		
 		Actor terrain = new Actor();

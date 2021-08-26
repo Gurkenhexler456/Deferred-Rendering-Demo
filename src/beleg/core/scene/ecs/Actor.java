@@ -9,8 +9,8 @@ import org.joml.Matrix4f;
 
 public class Actor {
 
-	public Matrix4f m_Transform;
-	private ArrayList<Component> m_Components;
+	protected Matrix4f m_Transform;
+	protected ArrayList<Component> m_Components;
 	
 	public Actor() {
 		

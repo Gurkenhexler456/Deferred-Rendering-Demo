@@ -12,7 +12,6 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GLDebugMessageCallback;
 import org.lwjgl.opengl.GLUtil;
 import org.lwjgl.system.Callback;
 
@@ -45,6 +44,14 @@ public class Main {
 	private Matrix4f m_ModelTerrain;
 	
 	public Texture m_Texture;
+	
+
+	public Matrix4f m_WallTransform;
+	public Model 	m_WallModel;
+	public Shader 	m_WallShader;
+	
+	
+	
 	
 	public static void main(String[] args) {
 		
@@ -155,13 +162,19 @@ public class Main {
 		
 		m_ModelTerrain = new Matrix4f().identity();
 		
+		m_WallShader = buildDefaultShader();
+		m_WallTransform = new Matrix4f();
+		m_WallModel = 	ModelFactory.buildDefaultModel(
+							MeshGenerator.generateGridMesh(new Grid(16, 16)
+						));
+		
 		
 		
 		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
 		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 50.0f);
 		
-		m_View.rotate((float)Math.toRadians(30), 1, 0, 0);
-		m_View.translate(0, -4, -8);
+		//m_View.rotate((float)Math.toRadians(-30), 1, 0, 0);
+		m_View.translate(0, 1, -8);
 		
 		Vector3f rotation = new Vector3f(0, 1, 0).normalize();
 		
@@ -173,7 +186,7 @@ public class Main {
 		m_Texture = new Texture();
 		m_Texture.bind();
 		m_Texture.setFilteringAndWrapping(GL11.GL_NEAREST, GL11.GL_REPEAT);
-		m_Texture.image2D(16, 16, TextureGenerator.genTexture(16, 16, 3));
+		m_Texture.image2D(8, 8, TextureGenerator.genTexture(8, 8, 3));
 		m_Texture.unbind();
 		
 		float lightXDir, lightYDir;
@@ -236,7 +249,6 @@ public class Main {
 				m_GeometryRenderer.render(model);
 			}
 			
-			
 			/*
 			 * deferred render pass
 			 */
@@ -271,6 +283,25 @@ public class Main {
 			m_Renderer.setAmbient(new Vector3f(0.2f));
 			m_Renderer.render();
 			
+			// updating depth texture
+			GL33.glBindFramebuffer(GL33.GL_READ_FRAMEBUFFER, m_Renderer.getRenderFBO());
+			GL33.glBindFramebuffer(GL33.GL_DRAW_FRAMEBUFFER, 0);
+			GL33.glBlitFramebuffer(	0, 0, 
+									m_Resolution.x, m_Resolution.y, 
+									0, 0, 
+									m_WindowSize.x, m_WindowSize.y, 
+									GL11.GL_DEPTH_BUFFER_BIT, 
+									GL11.GL_NEAREST);
+			
+			m_GeometryRenderer.useShader(m_WallShader);
+			
+			m_WallShader.setMat4("u_Projection", m_Projection);
+			m_WallShader.setMat4("u_View", m_View);
+			m_WallShader.setMat4("u_Model", m_WallTransform);
+			
+			m_GeometryRenderer.render(m_WallModel);
+			
+			
 				
 			GLFW.glfwSwapBuffers(m_Window);
 			
@@ -293,7 +324,7 @@ public class Main {
 	
 	public Scene loadTestScene() {
 		
-		Material defaultMaterial = new Material(buildDefaultShader());
+		Material defaultMaterial = new Material(buildDeferredShader());
 		
 		Actor cube = new Actor();
 		cube.addComponent(defaultMaterial);
@@ -339,12 +370,12 @@ public class Main {
 		return result;
 	}
 	
-	public Shader buildDefaultShader() {
+	public Shader buildDeferredShader() {
 		
 		Shader shader = new Shader();
 		
-		String vert_source = Resources.loadFileToString("res/shaders/default.vert");
-		String frag_source = Resources.loadFileToString("res/shaders/default.frag");
+		String vert_source = Resources.loadFileToString("res/shaders/default_deferred.vert");
+		String frag_source = Resources.loadFileToString("res/shaders/default_deferred.frag");
 		
 		int vert_id = shader.addShader(GL20.GL_VERTEX_SHADER, vert_source);
 		int frag_id = shader.addShader(GL20.GL_FRAGMENT_SHADER, frag_source);
@@ -356,6 +387,28 @@ public class Main {
 		shader.bindFragDataLocation(0, "out_Position");
 		shader.bindFragDataLocation(1, "out_Albedo");
 		shader.bindFragDataLocation(2, "out_Normal");
+		
+		shader.link();
+		
+		shader.removeShader(vert_id);
+		shader.removeShader(frag_id);
+		
+		return shader;
+	}
+	
+	public Shader buildDefaultShader() {
+		
+		Shader shader = new Shader();
+		
+		String vert_source = Resources.loadFileToString("res/shaders/default.vert");
+		String frag_source = Resources.loadFileToString("res/shaders/default.frag");
+		
+		int vert_id = shader.addShader(GL20.GL_VERTEX_SHADER, vert_source);
+		int frag_id = shader.addShader(GL20.GL_FRAGMENT_SHADER, frag_source);
+		
+		shader.bindAttribLocation(0, "in_Position");
+		shader.bindAttribLocation(1, "in_UV");
+		shader.bindAttribLocation(2, "in_Normal");
 		
 		shader.link();
 		

@@ -23,7 +23,7 @@ public class RotationBehaviour extends Behaviour {
 	public void update() {
 		
 		Vector3f translation = new Vector3f(m_RotationAxis);
-		translation.mul(3 + (float)Math.sin(GLFW.glfwGetTime()));
+		translation.mul(2);
 		translation.add(new Vector3f(-0.5f));
 		
 		m_Model.identity();

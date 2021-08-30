@@ -142,7 +142,7 @@ public class Main {
 	public void loop() {
 		
 		m_Resolution.set(m_WindowSize);
-		setRenderResolution(0.5f);
+		setRenderResolution(1);
 		
 		
 		m_Renderer = new DeferredRenderer();

@@ -102,22 +102,22 @@ public class DeferredRenderer {
 		
 		m_Position.bind();
 		m_Position.image2D(m_Resolution.x, m_Resolution.y, data);
-		m_Position.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
+		m_Position.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_CLAMP);
 		m_Position.unbind();
 		
 		m_Albedo.bind();
 		m_Albedo.image2D(m_Resolution.x, m_Resolution.y, data);
-		m_Albedo.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
+		m_Albedo.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_CLAMP);
 		m_Albedo.unbind();
 		
 		m_Normal.bind();
 		m_Normal.image2D(m_Resolution.x, m_Resolution.y, data);
-		m_Normal.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
+		m_Normal.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_CLAMP);
 		m_Normal.unbind();
 		
 		m_Depth.bind();
 		m_Depth.image2D(m_Resolution.x, m_Resolution.y, data);
-		m_Depth.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_REPEAT);
+		m_Depth.setFilteringAndWrapping(GL11.GL_LINEAR, GL11.GL_CLAMP);
 		m_Depth.unbind();
 	}
 	
@@ -280,6 +280,27 @@ public class DeferredRenderer {
 		GL30.glDeleteVertexArrays(m_VAO);
 		GL15.glDeleteBuffers(m_VBO);
 		GL15.glDeleteBuffers(m_EBO);
+	}
+	
+	
+	public Texture getAlbedoTexture() {
+		
+		return m_Albedo;
+	}
+	
+	public Texture getPositionTexture() {
+		
+		return m_Position;
+	}
+
+	public Texture getNormalTexture() {
+	
+		return m_Normal;
+	}
+
+	public Texture getDepthTexture() {
+	
+		return m_Depth;
 	}
 
 }

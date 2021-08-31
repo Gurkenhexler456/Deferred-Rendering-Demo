@@ -2,18 +2,14 @@ package beleg.core;
 
 
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.joml.Vector2i;
 import org.joml.Vector3f;
-import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWGammaRamp;
-import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL33;
-import org.lwjgl.opengl.GLUtil;
-import org.lwjgl.system.Callback;
 
 import beleg.core.graphics.Material;
 import beleg.core.graphics.Model;
@@ -24,8 +20,10 @@ import beleg.core.graphics.TextureGenerator;
 import beleg.core.graphics.lighting.DirectionalLight;
 import beleg.core.graphics.lighting.PointLight;
 import beleg.core.scene.Behaviour;
+import beleg.core.scene.Camera;
 import beleg.core.scene.Scene;
 import beleg.core.scene.ecs.Actor;
+import beleg.demo.CameraController;
 import beleg.demo.RotationBehaviour;
 
 public class Main {
@@ -50,6 +48,25 @@ public class Main {
 	public Model 	m_WallModel;
 	public Shader 	m_WallShader;
 	
+	public Camera m_Camera;
+	public CameraController m_CameraController;
+	
+	
+	public Vector2f m_MousePosition = new Vector2f();
+	
+	public boolean m_Keys[] = new boolean[512];
+	
+	public boolean m_MouseLocked = false;
+	public boolean m_DeferredWireframe = false;
+	public boolean m_ForwardWireframe = false;
+	
+	public float m_DeltaLock = 0.0f;
+	public float m_DeltaDeferredWire = 0.0f;
+	public float m_DeltaForwardWire = 0.0f;
+	
+	
+	public float m_MaxKlickTime = 0.2f;
+	
 	
 	
 	
@@ -71,14 +88,14 @@ public class Main {
 			throw new RuntimeException("Couldn't initialize GLFW");
 		}
 		
-		
-		printMonitorInfo();
-		
 		GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
 		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
 		GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
 		
 		m_Window = GLFW.glfwCreateWindow(m_WindowSize.x, m_WindowSize.y, "Deferred Rendering Demo", 0, 0);
+		
+		GLFW.glfwSetKeyCallback(m_Window, this::handleKey);
+		GLFW.glfwSetCursorPosCallback(m_Window, this::handleMouse);
 		
 		if(m_Window == 0) {
 			
@@ -89,62 +106,21 @@ public class Main {
 		
 		GL.createCapabilities();
 		
-		Callback debugProc = GLUtil.setupDebugMessageCallback();
-		
 		String version = GL11.glGetString(GL11.GL_VERSION);
 		System.out.printf("Version: %s\n", version);
 		
 	}
 	
-	public void printMonitorInfo() {
-		
-		PointerBuffer monitors = GLFW.glfwGetMonitors();
-		long pointer;
-		float[] x = new float[1];
-		float[] y = new float[1];
-		int[] xMM = new int[1];
-		int[] yMM = new int[1];
-		
-		for(int i = 0; i < monitors.remaining(); i++) {
-			
-			pointer = monitors.get(i);
-			String name = GLFW.glfwGetMonitorName(pointer);
-			
-			System.out.printf("Monitor #%d:\n", i);
-			System.out.printf("Name:  %s\n", name);
-			
-			GLFW.glfwGetMonitorContentScale(pointer, x, y);
-			System.out.printf("Content Scale: %f, %f\n", x[0], y[0]);
-			
-			GLFW.glfwGetMonitorPhysicalSize(pointer, xMM, yMM);
-			System.out.printf("Physical Size: %d, %d\n", xMM[0], yMM[0]);
-			
-			GLFW.glfwGetMonitorPos(pointer, xMM, yMM);
-			System.out.printf("Position: %d, %d\n", xMM[0], yMM[0]);
-			
-			GLFWGammaRamp gamma = GLFW.glfwGetGammaRamp(pointer);
-			
-			//System.out.printf("");
-			
-			GLFWVidMode.Buffer buffer = GLFW.glfwGetVideoModes(pointer);
-			
-			for(int v = 0; v < buffer.remaining(); v++) {
-				
-				GLFWVidMode vidmode = buffer.get(v);
-				
-				System.out.printf("Vidmode %d:\n", v);
-				System.out.printf("\tResolution: %d, %d\n", buffer.width(), buffer.height());
-				System.out.printf("\tRefresh Rate: %d\n", buffer.refreshRate());
-				System.out.printf("\tRGB: %d %d %d\n", buffer.redBits(), buffer.greenBits(), buffer.blueBits());
-			}
-		}
-	}
+	
+	
 	
 	public void setRenderResolution(float _percentage) {
 		
 		m_Resolution.x = (int) (m_Resolution.x * _percentage);
 		m_Resolution.y = (int) (m_Resolution.y * _percentage);
 	}
+	
+	
 	
 	public void loop() {
 		
@@ -165,7 +141,7 @@ public class Main {
 		m_WallShader = buildDefaultShader();
 		m_WallTransform = new Matrix4f();
 		m_WallModel = 	ModelFactory.buildDefaultModel(
-							MeshGenerator.generateGridMesh(new Grid(16, 16)
+							MeshGenerator.generateGridMesh(new Grid(16, 9)
 						));
 		
 		
@@ -173,10 +149,8 @@ public class Main {
 		float ratio = (float) m_Renderer.getProjection().x / m_Renderer.getProjection().y;
 		m_Projection.perspective((float) Math.toRadians(75), ratio, 0.1f, 50.0f);
 		
-		//m_View.rotate((float)Math.toRadians(-30), 1, 0, 0);
 		m_View.translate(0, 1, -8);
 		
-		Vector3f rotation = new Vector3f(0, 1, 0).normalize();
 		
 		
 		m_Scene = loadTestScene();
@@ -189,11 +163,39 @@ public class Main {
 		m_Texture.image2D(8, 8, TextureGenerator.genTexture(8, 8, 3));
 		m_Texture.unbind();
 		
-		float lightXDir, lightYDir;
+
+		m_Camera = new Camera();
+		m_CameraController = new CameraController(m_Camera, m_Keys, m_MousePosition, m_WindowSize);
+		m_CameraController.update(0.0f);
 		
+		
+		long lastFrame, currentFrame;
+		float delta;
+		
+		lastFrame = System.currentTimeMillis();
 		
 		while(! GLFW.glfwWindowShouldClose(m_Window)) {
 		
+			
+			currentFrame = System.currentTimeMillis();
+			delta = (currentFrame - lastFrame) / 1000f;
+			lastFrame = currentFrame;
+			
+			m_DeltaLock += delta;
+			m_DeltaDeferredWire += delta;
+			m_DeltaForwardWire += delta;
+			
+			
+
+			checkFlags();
+			
+			if(m_MouseLocked) {
+			
+				m_CameraController.update(delta);
+			}
+			m_View = m_Camera.getViewMatrix();
+			
+			
 			for(Actor actor : m_Scene.getActors()) {
 				
 				Behaviour b = actor.getComponent(Behaviour.class);
@@ -205,83 +207,10 @@ public class Main {
 			}
 			
 			
-			m_ModelTerrain.identity();
-			m_ModelTerrain.translate(-8, -2, -8);
+			geometryRenderPass();
 			
-			float pos = (float) Math.sin(Math.toRadians(-GLFW.glfwGetTime() * 25)) + 3;
-			float angle = (float) Math.toRadians(-GLFW.glfwGetTime() * 25);
+			deferredRenderPass();
 			
-			
-			
-			lightXDir = (float) Math.cos(GLFW.glfwGetTime() * 0.1);
-			lightYDir = (float) Math.sin(GLFW.glfwGetTime() * 0.1);
-			
-			/*
-			 * geometry render pass
-			 */
-			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
-			
-			m_Renderer.setViewport();
-			GL11.glClearColor(0, 0, 0, 1.0f);
-			GL11.glEnable(GL11.GL_DEPTH_TEST);
-			
-			//GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);	
-			//GL11.glLineWidth(5.0f);
-			
-			GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-			
-			//m_Scene.render();
-			
-			for(Actor actor : m_Scene.getActors()) {
-			
-				Material material = actor.getComponent(Material.class);
-				Model model = actor.getComponent(Model.class);
-				material.bind();
-				
-				GL20.glActiveTexture(GL20.GL_TEXTURE0);
-				m_Texture.bind();
-				
-				material.getShader().setMat4("u_Projection", m_Projection);
-				material.getShader().setMat4("u_View", m_View);
-				material.getShader().setMat4("u_Model", actor.getTransform());
-				
-				
-				m_GeometryRenderer.render(model);
-			}
-			
-			/*
-			 * deferred render pass
-			 */
-			GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
-	
-			GL11.glViewport(0, 0, m_WindowSize.x, m_WindowSize.y);
-			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
-			
-			
-			float dtAng = (float) GLFW.glfwGetTime();
-			float rAng = dtAng;
-			float gAng = (float)((1.0f / 3.0f) * Math.PI * 2.0f) + dtAng;
-			float bAng = (float)((2.0f / 3.0f) * Math.PI * 2.0f) + dtAng;
-			
-			m_Renderer.setLight(0, new DirectionalLight(new Vector3f(lightXDir,  lightYDir, 0), new Vector3f(1)));
-			m_Renderer.setLight(0, 
-					new PointLight(	new Vector3f(	3 * (float)Math.sin(rAng), 
-													(float)Math.sin(rAng), 
-													3 * (float)Math.cos(rAng)), 
-									new Vector3f(1, 0, 0)));
-			m_Renderer.setLight(1, 
-					new PointLight(	new Vector3f(	3 * (float)Math.sin(gAng), 
-													(float)Math.sin(gAng),
-													3 * (float)Math.cos(gAng)), 
-									new Vector3f(0, 1, 0)));
-			m_Renderer.setLight(2, 
-					new PointLight(	new Vector3f(	3 * (float)Math.sin(bAng), 
-													(float)Math.sin(bAng),
-													3 * (float)Math.cos(bAng)), 
-									new Vector3f(0, 0, 1)));
-			m_Renderer.setAmbient(new Vector3f(0.2f));
-			m_Renderer.render();
 			
 			// updating depth texture
 			GL33.glBindFramebuffer(GL33.GL_READ_FRAMEBUFFER, m_Renderer.getRenderFBO());
@@ -293,13 +222,8 @@ public class Main {
 									GL11.GL_DEPTH_BUFFER_BIT, 
 									GL11.GL_NEAREST);
 			
-			m_GeometryRenderer.useShader(m_WallShader);
 			
-			m_WallShader.setMat4("u_Projection", m_Projection);
-			m_WallShader.setMat4("u_View", m_View);
-			m_WallShader.setMat4("u_Model", m_WallTransform);
-			
-			m_GeometryRenderer.render(m_WallModel);
+			renderWalls();
 			
 			
 				
@@ -317,6 +241,180 @@ public class Main {
 		GLFW.glfwDestroyWindow(m_Window);
 		
 		GLFW.glfwTerminate();
+	}
+	
+	
+	
+	public void checkFlags() {
+		
+		if(m_Keys[GLFW.GLFW_KEY_L] && m_DeltaLock >= m_MaxKlickTime) {
+			
+			m_DeltaLock = 0;
+			m_MouseLocked = !m_MouseLocked;
+		}
+		
+		if(m_Keys[GLFW.GLFW_KEY_1] && m_DeltaDeferredWire >= m_MaxKlickTime) {
+						
+			m_DeltaDeferredWire = 0;
+			m_DeferredWireframe = !m_DeferredWireframe;
+		}
+		
+		if(m_Keys[GLFW.GLFW_KEY_2] && m_DeltaForwardWire >= m_MaxKlickTime) {
+			
+			m_DeltaForwardWire = 0;
+			m_ForwardWireframe = !m_ForwardWireframe;
+		}
+	}
+	
+	public void geometryRenderPass() {
+		
+		
+		m_ModelTerrain.identity();
+		m_ModelTerrain.translate(-8, -2, -8);
+		
+		GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, m_Renderer.getRenderFBO());
+		
+		m_Renderer.setViewport();
+		GL11.glClearColor(0, 0, 0, 1.0f);
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		
+		if(m_DeferredWireframe) {
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+		}
+		else {
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+		}
+		
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		
+		//m_Scene.render();
+		
+		for(Actor actor : m_Scene.getActors()) {
+		
+			Material material = actor.getComponent(Material.class);
+			Model model = actor.getComponent(Model.class);
+			material.bind();
+			
+			GL20.glActiveTexture(GL20.GL_TEXTURE0);
+			m_Texture.bind();
+			
+			material.getShader().setMat4("u_Projection", m_Projection);
+			material.getShader().setMat4("u_View", m_View);
+			material.getShader().setMat4("u_Model", actor.getTransform());
+			
+			
+			m_GeometryRenderer.render(model);
+		}
+	}
+	
+	public void deferredRenderPass() {
+		
+		GL33.glBindFramebuffer(GL33.GL_FRAMEBUFFER, 0);
+
+		GL11.glViewport(0, 0, m_WindowSize.x, m_WindowSize.y);
+		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+		
+		
+		float lightXDir = (float) Math.cos(GLFW.glfwGetTime() * 0.1);
+		float lightYDir = (float) Math.sin(GLFW.glfwGetTime() * 0.1);
+		
+		float dtAng = (float) GLFW.glfwGetTime();
+		float rAng = dtAng;
+		float gAng = (float)((1.0f / 3.0f) * Math.PI * 2.0f) + dtAng;
+		float bAng = (float)((2.0f / 3.0f) * Math.PI * 2.0f) + dtAng;
+		
+		m_Renderer.setLight(0, 
+				new PointLight(	new Vector3f(	3 * (float)Math.sin(rAng), 
+												(float)Math.sin(rAng), 
+												3 * (float)Math.cos(rAng)), 
+								new Vector3f(1, 0, 0)));
+		m_Renderer.setLight(1, 
+				new PointLight(	new Vector3f(	3 * (float)Math.sin(gAng), 
+												(float)Math.sin(gAng),
+												3 * (float)Math.cos(gAng)), 
+								new Vector3f(0, 1, 0)));
+		m_Renderer.setLight(2, 
+				new PointLight(	new Vector3f(	3 * (float)Math.sin(bAng), 
+												(float)Math.sin(bAng),
+												3 * (float)Math.cos(bAng)), 
+								new Vector3f(0, 0, 1)));
+		m_Renderer.setAmbient(new Vector3f(0.2f));
+		m_Renderer.setLight(3, new DirectionalLight(new Vector3f(lightXDir,  lightYDir, 0), new Vector3f(1)));
+		
+		m_Renderer.render();
+	}
+	
+	public void renderWalls() {
+		
+		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		
+		if(m_ForwardWireframe) {
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_LINE);
+		}
+		else {
+			GL11.glPolygonMode(GL11.GL_FRONT_AND_BACK, GL11.GL_FILL);
+		}
+		
+		m_GeometryRenderer.useShader(m_WallShader);
+		
+		
+		// position wall
+		m_WallTransform.identity();
+		m_WallTransform.rotate((float) Math.toRadians(-90), new Vector3f(1, 0, 0));
+		m_WallTransform.translate(-8, 0, -4.5f);
+		m_WallTransform.translate(0, 8, 2.5f);
+		
+		GL20.glActiveTexture(GL20.GL_TEXTURE0);
+		m_Renderer.getPositionTexture().bind();
+		
+		m_WallShader.setMat4("u_Projection", m_Projection);
+		m_WallShader.setMat4("u_View", m_View);
+		m_WallShader.setMat4("u_Model", m_WallTransform);
+		
+		m_GeometryRenderer.render(m_WallModel);
+		
+		// color wall
+		m_WallTransform.identity();
+		m_WallTransform.rotate((float) Math.toRadians(-90), new Vector3f(1, 0, 0));
+		m_WallTransform.rotate((float) Math.toRadians(-90), new Vector3f(0, 0, 1));
+		m_WallTransform.translate(-8, 0, -4.5f);
+		m_WallTransform.translate(0, 8, 2.5f);
+		
+		GL20.glActiveTexture(GL20.GL_TEXTURE0);
+		m_Renderer.getAlbedoTexture().bind();
+		
+		m_WallShader.setMat4("u_Model", m_WallTransform);
+		
+		m_GeometryRenderer.render(m_WallModel);
+		
+		// normal wall
+		m_WallTransform.identity();
+		m_WallTransform.rotate((float) Math.toRadians(-90), new Vector3f(1, 0, 0));
+		m_WallTransform.rotate((float) Math.toRadians(90), new Vector3f(0, 0, 1));
+		m_WallTransform.translate(-8, 0, -4.5f);
+		m_WallTransform.translate(0, 8, 2.5f);
+		
+		GL20.glActiveTexture(GL20.GL_TEXTURE0);
+		m_Renderer.getNormalTexture().bind();
+		
+		m_WallShader.setMat4("u_Model", m_WallTransform);
+		
+		m_GeometryRenderer.render(m_WallModel);
+		
+		// depth wall
+		m_WallTransform.identity();
+		m_WallTransform.rotate((float) Math.toRadians(-90), new Vector3f(1, 0, 0));
+		m_WallTransform.rotate((float) Math.toRadians(180), new Vector3f(0, 0, 1));
+		m_WallTransform.translate(-8, 0, -4.5f);
+		m_WallTransform.translate(0, 8, 2.5f);
+		
+		GL20.glActiveTexture(GL20.GL_TEXTURE0);
+		m_Renderer.getDepthTexture().bind();
+		
+		m_WallShader.setMat4("u_Model", m_WallTransform);
+		
+		m_GeometryRenderer.render(m_WallModel);
 	}
 	
 	
@@ -417,6 +515,35 @@ public class Main {
 		
 		return shader;
 	}
+
+
+
+	public void handleKey(long window, int key, int scancode, int action, int mods) {
+		
+		if(action == GLFW.GLFW_PRESS) {
+			
+			m_Keys[key] = true;
+		}
+		else if(action == GLFW.GLFW_RELEASE) {
+			
+			m_Keys[key] = false;
+		}
+		
+	}
+
+
+	public void handleMouse(long window, double xpos, double ypos) {
+		
+		m_MousePosition.set(xpos, ypos);
+		
+		if(m_MouseLocked) {
+			
+			GLFW.glfwSetCursorPos(m_Window, m_WindowSize.x >> 1, m_WindowSize.y >> 1);
+		}
+	}
+
+	
+	
 	
 }
 
